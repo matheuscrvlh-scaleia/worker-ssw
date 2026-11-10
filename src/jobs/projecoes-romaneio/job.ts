@@ -8,7 +8,7 @@ import { z } from "@erp/shared/zod";
 import { definirJob } from "../registro";
 
 /** CT-e por lote da reconstrução completa (uma transação por lote). */
-const TAMANHO_DO_LOTE = 500;
+export const TAMANHO_DO_LOTE = 500;
 
 const chave = z.object({ sigla: z.string().min(1), numero: z.string().min(1) });
 

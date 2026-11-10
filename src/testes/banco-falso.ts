@@ -85,7 +85,8 @@ export class BancoFalso {
   private repositorios(): RepositoriosDoWorker {
     return {
       agendamentos: {
-        empresasAtivas: () => Promise.resolve([]),
+        empresasAtivas: () =>
+          Promise.resolve(this.empresas.map(({ id }) => ({ id, fuso: "America/Sao_Paulo" }))),
         empresasComIntegracao: (tipo) =>
           Promise.resolve(
             this.empresas.filter((e) => e.integracoes.includes(tipo)).map(({ id }) => ({ id })),

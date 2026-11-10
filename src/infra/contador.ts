@@ -22,20 +22,3 @@ export function criarContadorRedis(
     },
   };
 }
-
-/** Só para os testes (sem Redis). */
-export function criarContadorEmMemoria(
-  janelaMs: number,
-  agora: () => number = Date.now,
-): ContadorPorJanela {
-  const janelas = new Map<string, { ate: number; total: number }>();
-  return {
-    somar: (chave) => {
-      const atual = janelas.get(chave);
-      const janela = atual && atual.ate > agora() ? atual : { ate: agora() + janelaMs, total: 0 };
-      janela.total += 1;
-      janelas.set(chave, janela);
-      return Promise.resolve(janela.total);
-    },
-  };
-}

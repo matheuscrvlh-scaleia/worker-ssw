@@ -5,13 +5,11 @@
  */
 import { randomUUID } from "node:crypto";
 
-import { ErroDeNegocio } from "@erp/dominio/erros";
 import { JOB_COLETAS_050 } from "@erp/shared/ingestao";
 
 import {
   type AnaliseDoRelatorio,
   detectarRelatorioBytes,
-  lerRelatorio,
   pareceRelatorio050,
   type Relatorio,
 } from "../../fontes/relatorios";
@@ -187,32 +185,4 @@ export async function receberArquivo(
     await registrarErro(lido.relatorio, mensagem(e), loteId);
     return { ok: false, status: "erro", mensagem: mensagem(e) };
   }
-}
-
-/**
- * Importação manual pela tela (Admin › Importação SSW): grava o relatório num lote sem ciclo; as
- * linhas entram na próxima aplicação. Cabeçalho divergente só passa com a confirmação da tela.
- */
-export async function importarRelatorioManual(
-  executar: Transacional,
-  entrada: {
-    relatorio: Relatorio;
-    conteudo: string;
-    nome: string | null;
-    aceitarDivergencia: boolean;
-  },
-): Promise<{ loteId: string; gravados: number; erros: number }> {
-  const lido = lerRelatorio(entrada.relatorio, entrada.conteudo);
-  if (lido.analise.cabecalhoDivergente && !entrada.aceitarDivergencia) {
-    throw new ErroDeNegocio(
-      "ENTRADA_INVALIDA",
-      `Cabeçalho do relatório ${entrada.relatorio} divergente do esperado — arquivo não importado. Confira o arquivo ou marque a confirmação para gravar mesmo assim.`,
-    );
-  }
-  if (lido.analise.registros.length === 0) {
-    throw new ErroDeNegocio("ENTRADA_INVALIDA", "Nenhuma linha válida para gravar.");
-  }
-  const loteId = randomUUID();
-  const gravados = await executar((r) => gravarNaStaging(r, lido, loteId, null, entrada.nome));
-  return { loteId, gravados, erros: lido.analise.erros.length };
 }

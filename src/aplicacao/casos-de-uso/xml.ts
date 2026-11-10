@@ -4,37 +4,17 @@
  * portados (§9).
  * origem: src/features/admin/xml-cte/server/importar.server.ts + orfaos.server.ts (sistema atual)
  */
-import { ErroDeNegocio } from "@erp/dominio/erros";
 
 import {
   camposDoXml,
   casaPeloNumeroCte,
-  classificarXml,
-  DIAS_DO_ORFAO,
   lerCancelamentoXml,
   lerCteXml,
   numeroCteDaChave,
-  type StatusDoArquivoXml,
-  statusDoArquivoXml,
-  type StatusDoItemXml,
-  type TipoXml,
-  type XmlDoArquivo,
-  xmlsDoZip,
 } from "../../fontes/xml-cte";
 import { type CteDaIngestao } from "../regras";
 import { regravarCte } from "./gravar-cte";
-import { sha256 } from "./linhas";
 import { type RepositorioIngestao, type Transacional } from "./portas";
-
-export interface ResultadoDoXml {
-  arquivo: string;
-  status: StatusDoArquivoXml;
-  ctesProcessados: number;
-  cancelamentos: number;
-  orfaos: number;
-  pulados: number;
-  erros: { nome: string; erro: string }[];
-}
 
 const mensagemDe = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -103,125 +83,6 @@ async function aplicarXml(
   const ocorrencias = (await r.ocorrenciasDosCtes([cte.id])).get(cte.id) ?? [];
   await regravarCte(r, cad, cte, campos, ocorrencias, agora);
   return { casado: true, chaveCte: d.chaveCte, numeroCte };
-}
-
-/** Importa um `.xml` ou `.zip` enviado pela tela (um arquivo por chamada, uma transação). */
-export async function importarArquivoXml(
-  executar: Transacional,
-  arquivo: { nome: string; bytes: Uint8Array },
-  agora: Date,
-): Promise<ResultadoDoXml> {
-  const tipoArquivo = /\.zip$/i.test(arquivo.nome) ? "zip" : "xml";
-  if (tipoArquivo === "xml" && !/\.xml$/i.test(arquivo.nome)) {
-    throw new ErroDeNegocio("ENTRADA_INVALIDA", "Envie arquivos .xml ou .zip.");
-  }
-  const sha = sha256(arquivo.bytes);
-  return executar(async (r) => {
-    const anterior = await r.arquivoXmlPorSha(sha);
-    const vazio = {
-      arquivo: arquivo.nome,
-      ctesProcessados: 0,
-      cancelamentos: 0,
-      orfaos: 0,
-      erros: [],
-    };
-    if (anterior?.status === "sucesso") {
-      return { ...vazio, status: "duplicado" as const, pulados: anterior.xmlsPulados };
-    }
-    let xmls: XmlDoArquivo[] = [];
-    let erroGeral: string | null = null;
-    try {
-      xmls =
-        tipoArquivo === "zip"
-          ? xmlsDoZip(arquivo.bytes)
-          : [{ nome: arquivo.nome, conteudo: new TextDecoder("utf-8").decode(arquivo.bytes) }];
-    } catch (e) {
-      erroGeral = `Arquivo inválido: ${mensagemDe(e)}`;
-    }
-    const classificados = xmls
-      .map((x) => ({ ...x, tipo: classificarXml(x.nome, x.conteudo) }))
-      .sort((a, b) => Number(a.tipo === "can") - Number(b.tipo === "can"));
-    const itens: StatusDoItemXml[] = [];
-    const res: ResultadoDoXml = { ...vazio, status: "sucesso", pulados: 0, erros: [] };
-    for (const x of classificados) {
-      const shaXml = sha256(x.conteudo);
-      if (await r.itemXmlJaAplicado(shaXml)) {
-        itens.push("pulado");
-        res.pulados++;
-        continue;
-      }
-      const registrar = (
-        status: "sucesso" | "erro" | "orfao",
-        tipo: TipoXml,
-        chaveCte: string | null,
-        numeroCte: string | null,
-        erro: string | null,
-      ) =>
-        r.registrarItemXml({
-          arquivoId: null,
-          sha256Xml: shaXml,
-          nomeXml: x.nome,
-          tipo,
-          status,
-          numeroCte,
-          chaveCte,
-          erroMensagem: erro,
-        });
-      if (x.tipo === "unknown") {
-        itens.push("erro");
-        res.erros.push({ nome: x.nome, erro: "XML não reconhecido (nem CT-e nem cancelamento)" });
-        await registrar("erro", "unknown", null, null, "XML não reconhecido");
-        continue;
-      }
-      try {
-        const a = await aplicarXml(r, x.tipo, x.conteudo, agora);
-        if (a.casado) {
-          itens.push("sucesso");
-          if (x.tipo === "can") res.cancelamentos++;
-          else res.ctesProcessados++;
-          await registrar("sucesso", x.tipo, a.chaveCte, a.numeroCte, null);
-        } else {
-          itens.push("orfao");
-          res.orfaos++;
-          await r.guardarOrfao(
-            {
-              sha256Xml: shaXml,
-              nomeXml: x.nome,
-              tipo: x.tipo,
-              chaveCte: a.chaveCte,
-              xmlConteudo: x.conteudo,
-            },
-            new Date(agora.getTime() + DIAS_DO_ORFAO * 86_400_000),
-          );
-          await registrar("orfao", x.tipo, a.chaveCte, a.numeroCte, null);
-        }
-      } catch (e) {
-        itens.push("erro");
-        res.erros.push({ nome: x.nome, erro: mensagemDe(e) });
-        await registrar("erro", x.tipo, null, null, mensagemDe(e));
-      }
-    }
-    res.status = statusDoArquivoXml(itens, res.ctesProcessados + res.cancelamentos, erroGeral);
-    await r.registrarArquivoXml({
-      nomeArquivo: arquivo.nome,
-      sha256: sha,
-      tipo: tipoArquivo,
-      status: res.status,
-      erroMensagem:
-        erroGeral ??
-        (res.erros.length
-          ? res.erros
-              .map((e) => `${e.nome}: ${e.erro}`)
-              .join("; ")
-              .slice(0, 4000)
-          : null),
-      ctesProcessados: res.ctesProcessados,
-      cancelamentos: res.cancelamentos,
-      xmlsPulados: res.pulados,
-    });
-    if (erroGeral) res.erros.push({ nome: arquivo.nome, erro: erroGeral });
-    return res;
-  });
 }
 
 export const LIMITE_PADRAO_DOS_ORFAOS = 200;

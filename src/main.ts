@@ -33,7 +33,6 @@ import {
   criarClienteSftp,
   criarFilaDeAplicacao,
   criarFilas,
-  criarProgressos,
   criarRepositorioCteNucleo,
   criarRepositorioDeRetencao,
   criarRepositorioGravacao050,
@@ -105,7 +104,7 @@ function repositorios(tx: Transacao, { empresaId }: ContextoBanco): Repositorios
     },
     bi2: criarRepositorioBi2(tx, empresaId),
     webhook: criarRepositorioWebhook(tx, empresaId),
-    ingestao: (id) => criarRepositorioIngestao(tx, id, null),
+    ingestao: (id) => criarRepositorioIngestao(tx, id),
     retencaoDaIngestao: criarRepositorioDeRetencao(tx),
     slaArquivos: criarRepositorioSlaArquivos(tx),
     projecoesRomaneio: criarRepositorioProjecoesRomaneio(tx, empresaId),
@@ -146,7 +145,6 @@ const jobs = criarJobs({
   ingestao: {
     fila: criarFilaDeAplicacao(redisDosWorkers),
     travas: criarTravas(redisDosWorkers),
-    progressos: criarProgressos(redisDosWorkers),
     enfileirador: filas,
     sftp: criarClienteSftp(),
     cofre,
@@ -174,7 +172,7 @@ const { app, metricas } = await construirApp({
   ingestao: {
     executarNaEmpresa: (empresaId) => (fn) =>
       comContexto(conexao.banco, daEmpresa(empresaId), (tx) =>
-        fn(criarRepositorioIngestao(tx, empresaId, null)),
+        fn(criarRepositorioIngestao(tx, empresaId)),
       ),
     empresasParaIngestao: () =>
       comContexto(conexao.banco, PLATAFORMA, (tx) =>

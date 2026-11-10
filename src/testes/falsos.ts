@@ -74,7 +74,6 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
       Promise.resolve({ id: EMPRESA, nome: "FR", dominioSsw: "FRT", cnpj: "99888777000166" }),
     configuracoes: (chaves) =>
       Promise.resolve(new Map([...s.configuracoes].filter(([k]) => chaves.includes(k)))),
-    gravarConfiguracao: (k, v) => Promise.resolve(void s.configuracoes.set(k, v)),
     arquivoPorNome: (nome) => Promise.resolve(s.arquivos.get(nome) ?? null),
     registrarArquivo: (a) => {
       const antes = s.arquivos.get(a.nomeArquivo);
@@ -87,7 +86,6 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
       return Promise.resolve();
     },
     nomesDeArquivosRegistrados: () => Promise.resolve(new Set(s.arquivos.keys())),
-    ultimosArquivos: () => Promise.resolve([...s.arquivos.values()]),
     garantirCiclo: (c) => {
       if (!s.ciclos.has(c)) {
         s.ciclos.set(c, {
@@ -127,7 +125,6 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
           (STATUS_CICLO_ABERTO as readonly string[]).includes(c.status),
         ),
       ),
-    ultimosCiclos: () => Promise.resolve([...s.ciclos.values()]),
     fecharCiclosCobertos: (ate, agora) => {
       let n = 0;
       for (const c of s.ciclos.values()) {
@@ -143,10 +140,6 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
     },
     arquivosDoCiclo: (c) =>
       Promise.resolve([...s.arquivos.values()].filter((a) => a.cicloChave === c)),
-    marcarArquivosDescartados: (c) => {
-      for (const a of s.arquivos.values()) if (a.cicloChave === c) a.status = "descartado";
-      return Promise.resolve();
-    },
     relatoriosEsperados: () => Promise.resolve(s.esperados),
     gravarLinhas: (relatorio, loteId, arquivoId, linhas) => {
       let n = 0;
@@ -233,11 +226,6 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
       }
       return Promise.resolve([...vistas.values()]);
     },
-    apagarLotes: (lotes) => {
-      const apagadas = s.linhas.filter((l) => lotes.includes(l.loteId));
-      s.linhas = s.linhas.filter((l) => !lotes.includes(l.loteId));
-      return Promise.resolve({ linhas: apagadas.length, erros: 0, apagadas });
-    },
     cadastrosDoNucleo: () =>
       Promise.resolve({
         catalogo: CATALOGO_FR,
@@ -321,24 +309,15 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
       if (a) Object.assign(a, { status, erro });
       return Promise.resolve();
     },
-    ultimasAplicacoes: naoUsado,
-    arquivoXmlPorSha: naoUsado,
-    registrarArquivoXml: naoUsado,
-    ultimosArquivosXml: naoUsado,
-    itemXmlJaAplicado: naoUsado,
-    registrarItemXml: naoUsado,
     promoverItemXml: naoUsado,
     ctePorChaveCte: naoUsado,
     ctesPorNumeroCte: naoUsado,
     ctesPorChaveNfe: naoUsado,
     ctePorId: naoUsado,
-    guardarOrfao: naoUsado,
     expirarOrfaos: naoUsado,
     orfaosPendentes: naoUsado,
     marcarOrfao: naoUsado,
-    estatisticasDosOrfaos: naoUsado,
     registrarSincronizacao: (x) => Promise.resolve(void s.sincronizacoes.push(x)),
-    ultimasSincronizacoes: () => Promise.resolve(s.sincronizacoes),
   };
   return r;
 }
@@ -385,8 +364,6 @@ export function travasFalsas(): Travas & { ocupadas: Set<string> } {
     ocupadas,
     adquirir: (k) => Promise.resolve(ocupadas.has(k) ? null : (ocupadas.add(k), "token")),
     liberar: (k) => Promise.resolve(void ocupadas.delete(k)),
-    ativa: (k) => Promise.resolve(ocupadas.has(k)),
-    forcarLiberacao: (k) => Promise.resolve(void ocupadas.delete(k)),
   };
 }
 

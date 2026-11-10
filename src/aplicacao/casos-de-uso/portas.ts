@@ -96,14 +96,6 @@ export interface ErroNovo {
   motivo: string;
 }
 
-/** Linha apagada pelo descarte de ciclo: o que as projeções do Romaneio precisam saber dela. */
-export interface LinhaApagada {
-  relatorio: string;
-  sigla: string | null;
-  numero: string | null;
-  dados: unknown;
-}
-
 /** Linha guardada com a chave do CT-e. */
 export interface LinhaDaChave {
   id: number;
@@ -147,20 +139,6 @@ export interface EventoDeAuditoriaDaIngestao {
   depois: Record<string, unknown>;
 }
 
-export interface AplicacaoRegistrada {
-  id: string;
-  status: "em_andamento" | "concluido" | "erro";
-  simulacao: boolean;
-  totalInseridos: number;
-  totalAtualizados: number;
-  totalOcorrencias: number;
-  totalIgnorados: number;
-  erro: string | null;
-  iniciadoEm: Date;
-  finalizadoEm: Date | null;
-  aplicadoPor: string | null;
-}
-
 export interface CteCandidatoXml {
   id: string;
   cnpjDaFilial: string | null;
@@ -174,19 +152,6 @@ export interface OrfaoXml {
   chaveCte: string | null;
   xmlConteudo: string;
   tentativas: number;
-}
-
-export interface ArquivoXmlRegistrado {
-  id: string;
-  nomeArquivo: string;
-  sha256: string;
-  tipo: "zip" | "xml";
-  status: "sucesso" | "erro" | "parcial" | "duplicado";
-  erroMensagem: string | null;
-  ctesProcessados: number;
-  cancelamentos: number;
-  xmlsPulados: number;
-  criadoEm: Date;
 }
 
 export interface SincronizacaoFtp {
@@ -224,22 +189,18 @@ export interface RepositorioCteNucleo {
 export interface RepositorioIngestao extends RepositorioCteNucleo {
   empresa(): Promise<EmpresaDaIngestao>;
   configuracoes(chaves: readonly string[]): Promise<Map<string, string>>;
-  gravarConfiguracao(chave: string, valor: string): Promise<void>;
 
   // Arquivos e ciclos
   arquivoPorNome(nome: string): Promise<ArquivoRegistrado | null>;
   registrarArquivo(r: RegistroDeArquivo): Promise<void>;
   nomesDeArquivosRegistrados(): Promise<Set<string>>;
-  ultimosArquivos(limite: number): Promise<ArquivoRegistrado[]>;
   garantirCiclo(cicloChave: string): Promise<void>;
   ciclo(cicloChave: string): Promise<CicloRegistrado | null>;
   mudarCiclo(cicloChave: string, mudanca: MudancaDoCiclo): Promise<void>;
   ciclosAbertos(limite: number): Promise<CicloRegistrado[]>;
-  ultimosCiclos(limite: number): Promise<CicloRegistrado[]>;
   /** Ciclos abertos cujo último arquivo chegou até `ate`: cobertos pela mesma fila. */
   fecharCiclosCobertos(ate: Date, agora: Date): Promise<number>;
   arquivosDoCiclo(cicloChave: string): Promise<ArquivoRegistrado[]>;
-  marcarArquivosDescartados(cicloChave: string): Promise<void>;
   relatoriosEsperados(): Promise<
     {
       relatorio: string;
@@ -274,10 +235,6 @@ export interface RepositorioIngestao extends RepositorioCteNucleo {
   linhasSemChave(relatorios: readonly RelatorioGuardado[]): Promise<number>;
   /** Chaves com linha do relatório importada desde `desde`. */
   chavesDesde(relatorio: RelatorioGuardado, desde: Date): Promise<ChaveCte[]>;
-  /** Apaga as linhas e erros dos lotes; devolve o total por tabela e as linhas apagadas. */
-  apagarLotes(
-    loteIds: readonly string[],
-  ): Promise<{ linhas: number; erros: number; apagadas: LinhaApagada[] }>;
 
   // CT-e e ocorrências (a gravação do núcleo está em `RepositorioCteNucleo`)
   ctesDasChaves(chaves: readonly ChaveCte[]): Promise<CteDaIngestao[]>;
@@ -297,42 +254,18 @@ export interface RepositorioIngestao extends RepositorioCteNucleo {
     detalhe: Record<string, unknown> | null,
     erro: string | null,
   ): Promise<void>;
-  ultimasAplicacoes(limite: number): Promise<AplicacaoRegistrada[]>;
 
-  // XML de CT-e
-  arquivoXmlPorSha(sha256: string): Promise<ArquivoXmlRegistrado | null>;
-  registrarArquivoXml(a: Omit<ArquivoXmlRegistrado, "id" | "criadoEm">): Promise<string>;
-  ultimosArquivosXml(limite: number): Promise<ArquivoXmlRegistrado[]>;
-  itemXmlJaAplicado(sha256Xml: string): Promise<boolean>;
-  registrarItemXml(item: {
-    arquivoId: string | null;
-    sha256Xml: string;
-    nomeXml: string;
-    tipo: "cte" | "can" | "unknown";
-    status: "sucesso" | "erro" | "orfao";
-    numeroCte: string | null;
-    chaveCte: string | null;
-    erroMensagem: string | null;
-  }): Promise<void>;
   promoverItemXml(sha256Xml: string): Promise<void>;
   ctePorChaveCte(chave: string): Promise<CteDaIngestao | null>;
   ctesPorNumeroCte(numeroCte: number): Promise<CteCandidatoXml[]>;
   ctesPorChaveNfe(chaveNfe: string): Promise<string[]>;
   ctePorId(id: string): Promise<CteDaIngestao | null>;
-  guardarOrfao(o: Omit<OrfaoXml, "id" | "tentativas">, expiraEm: Date): Promise<void>;
   expirarOrfaos(agora: Date): Promise<number>;
   orfaosPendentes(limite: number): Promise<OrfaoXml[]>;
   marcarOrfao(id: string, casado: boolean, erro: string | null, agora: Date): Promise<void>;
-  estatisticasDosOrfaos(): Promise<{
-    pendentes: number;
-    expirados: number;
-    casados: number;
-    maisAntigo: Date | null;
-  }>;
 
   // FTP
   registrarSincronizacao(s: SincronizacaoFtp): Promise<void>;
-  ultimasSincronizacoes(limite: number): Promise<SincronizacaoFtp[]>;
 }
 
 /** Roda `fn` numa transação no contexto da empresa (cada chamada é uma transação). */
@@ -371,28 +304,6 @@ export interface FilaDeAplicacao {
 export interface Travas {
   adquirir(chave: string, validadeMs: number): Promise<string | null>;
   liberar(chave: string, token: string): Promise<void>;
-  ativa(chave: string): Promise<boolean>;
-  /** Botão "liberar trava" da tela. */
-  forcarLiberacao(chave: string): Promise<void>;
-}
-
-export type FaseDoFtp = "conectando" | "processando" | "relatorios" | "retroativo" | "concluido";
-
-export interface ProgressoDoFtp {
-  fase: FaseDoFtp;
-  totalArquivos: number;
-  arquivoAtualIndice: number;
-  arquivoAtualNome: string | null;
-  mensagem: string | null;
-  iniciadoEm: Date | null;
-  heartbeatEm: Date | null;
-  finalizadoEm: Date | null;
-}
-
-export interface Progressos {
-  gravar(empresaId: string, p: Partial<ProgressoDoFtp>, agora: Date): Promise<void>;
-  ler(empresaId: string): Promise<ProgressoDoFtp | null>;
-  limpar(empresaId: string): Promise<void>;
 }
 
 // --- SFTP ---------------------------------------------------------------------------------------

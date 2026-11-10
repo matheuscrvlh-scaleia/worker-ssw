@@ -54,16 +54,6 @@ export function parametroTexto(parametros: Record<string, unknown>, chave: strin
   return "";
 }
 
-/** Parâmetro lista (`["a","b"]` ou `"a, b"`). */
-export function parametroLista(parametros: Record<string, unknown>, chave: string): string[] {
-  const valor = parametros[chave];
-  const itens = Array.isArray(valor) ? valor : typeof valor === "string" ? valor.split(",") : [];
-  return itens
-    .filter((i): i is string => typeof i === "string")
-    .map((i) => i.trim())
-    .filter(Boolean);
-}
-
 /** Segredo decifrado da integração, ou `null` (sem segredo gravado ou sem chave no ambiente). */
 export function segredoDa(
   cofre: Cofre,

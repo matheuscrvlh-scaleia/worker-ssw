@@ -80,11 +80,3 @@ export function decidirEmpresa(
   }
   return { ok: true, empresa: unica };
 }
-
-/** Empresas que rodam um job agendado: status que ingere e integração ligada. */
-export function empresasQueIngerem(
-  empresas: readonly EmpresaParaIngestao[],
-  tipo: TipoIntegracao,
-): EmpresaParaIngestao[] {
-  return empresas.filter((e) => empresaEmOperacao(e.status) && e.integracoesAtivas.includes(tipo));
-}

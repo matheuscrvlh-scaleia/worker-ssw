@@ -413,16 +413,6 @@ async function cabeNaQuarentena(
   return (await portas.quarentenaDesde(empresa.id, desde)) < LIMITE_DIARIO_DA_QUARENTENA;
 }
 
-/** As duas etapas juntas (a rota faz a primeira no `onRequest`, antes de ler o corpo). */
-export async function receberWebhook(
-  portas: PortasDoWebhook,
-  req: RequisicaoDoWebhook,
-): Promise<RespostaDoWebhook> {
-  const autenticacao = await autenticarWebhook(portas, req);
-  if (autenticacao.tipo === "recusado") return autenticacao.resposta;
-  return processarWebhook(portas, req, autenticacao);
-}
-
 /** Corpo vazio vale como `{}` (como hoje); JSON inválido = `undefined`. */
 function lerJson(texto: string): unknown {
   if (texto.trim() === "") return {};

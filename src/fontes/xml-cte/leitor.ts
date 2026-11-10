@@ -1,10 +1,9 @@
 /**
- * Leitor do XML de CT-e (SSW1329) e do evento de cancelamento, e extração dos XML de um `.zip`.
+ * Leitor do XML de CT-e (SSW1329) e do evento de cancelamento.
  * Spec 06 §3.19.
  * origem: src/features/admin/xml-cte/server/parser.server.ts (sistema atual)
  */
 import { XMLParser } from "fast-xml-parser";
-import { strFromU8, unzipSync } from "fflate";
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -12,8 +11,6 @@ const parser = new XMLParser({
   parseTagValue: false,
   trimValues: true,
 });
-
-export type TipoXml = "cte" | "can" | "unknown";
 
 export interface DadosDoCteXml {
   /** Número fiscal (ide/nCT): só casa com `numero_cte`; nunca é o número do CTRC do SSW. */
@@ -74,16 +71,6 @@ function chaveDoId(id: string | null): string | null {
   if (!id) return null;
   const m = /(\d{44})/.exec(id);
   return m?.[1] ?? (id.replace(/\D/g, "").slice(-44) || null);
-}
-
-/** Nome `-cte.xml`/`_cte.xml` = CT-e; `-can.xml`/`_can.xml` = cancelamento; senão, pela raiz. */
-export function classificarXml(nome: string, xml: string): TipoXml {
-  const baixo = nome.toLowerCase();
-  if (baixo.endsWith("-cte.xml") || baixo.endsWith("_cte.xml")) return "cte";
-  if (baixo.endsWith("-can.xml") || baixo.endsWith("_can.xml")) return "can";
-  if (/<procEventoCTe[\s>]/i.test(xml) || /<evCancCTe[\s>]/i.test(xml)) return "can";
-  if (/<cteProc[\s>]/i.test(xml) || /<CTe[\s>]/i.test(xml)) return "cte";
-  return "unknown";
 }
 
 /**
@@ -164,41 +151,4 @@ export function lerCancelamentoXml(xml: string): DadosDoCancelamento {
   const det = no(infEvento.detEvento);
   const evCanc = no(det.evCancCTe ?? det.evCancCte ?? det);
   return { chaveCte: s(infEvento.chCTe) ?? s(evCanc.chCTe), dhEvento: s(infEvento.dhEvento) };
-}
-
-export interface XmlDoArquivo {
-  nome: string;
-  conteudo: string;
-}
-
-/**
- * Um XML de CT-e tem dezenas de KB: acima de 10 MB por arquivo é bomba de zip. O total (256 MB)
- * cabe milhares de XML com folga.
- */
-export const LIMITES_DO_ZIP = { porArquivo: 10 * 1024 * 1024, total: 256 * 1024 * 1024 };
-
-/**
- * Todos os `*.xml` de dentro de um `.zip`, com o caminho interno como nome. O tamanho
- * descompactado (`originalSize`, que o fflate usa como teto da saída) é conferido antes de
- * descompactar: arquivo ou total acima do limite recusa o zip inteiro.
- */
-export function xmlsDoZip(bytes: Uint8Array, limites = LIMITES_DO_ZIP): XmlDoArquivo[] {
-  let total = 0;
-  const arquivos = unzipSync(bytes, {
-    filter: (f) => {
-      if (!/\.xml$/i.test(f.name)) return false;
-      if (f.originalSize > limites.porArquivo) {
-        throw new Error(`XML ${f.name} grande demais dentro do zip (limite por arquivo).`);
-      }
-      total += f.originalSize;
-      if (total > limites.total) {
-        throw new Error("Zip grande demais depois de descompactado (limite do total).");
-      }
-      return true;
-    },
-  });
-  return Object.entries(arquivos).map(([nome, conteudo]) => ({
-    nome,
-    conteudo: strFromU8(conteudo),
-  }));
 }

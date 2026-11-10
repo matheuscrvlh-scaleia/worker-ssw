@@ -14,7 +14,6 @@ import {
   type ConexaoSftp,
   type CredenciaisDaEmpresa,
   type EntradaSftp,
-  type Progressos,
   type Relogio,
 } from "./portas";
 import { receberArquivo } from "./receber";
@@ -29,7 +28,6 @@ export const travaDoFtp = (empresaId: string) => `ftp:${empresaId}`;
 export interface DependenciasDoFtp extends DependenciasDoCiclo {
   sftp: ClienteSftp;
   credenciais: CredenciaisDaEmpresa;
-  progressos: Progressos;
   relogio: Relogio;
 }
 
@@ -146,19 +144,8 @@ export async function sincronizarFtp(
   const token = await deps.travas.adquirir(travaDoFtp(empresaId), TRAVA_DO_FTP_MS);
   if (token === null) return { status: "ja_rodando", mensagem: "Sincronização já em andamento." };
 
-  const progresso = (p: Parameters<Progressos["gravar"]>[1]) =>
-    deps.progressos.gravar(empresaId, p, deps.relogio.agora());
   let conexao: ConexaoSftp | null = null;
   try {
-    await progresso({
-      fase: "conectando",
-      iniciadoEm: inicio,
-      finalizadoEm: null,
-      mensagem: null,
-      totalArquivos: 0,
-      arquivoAtualIndice: 0,
-      arquivoAtualNome: null,
-    });
     try {
       conexao = await deps.sftp.conectar(cfg);
     } catch (e) {
@@ -193,20 +180,16 @@ export async function sincronizarFtp(
       await deps.relogio.esperar(ESTABILIDADE_MS);
       const segunda = (await c.listar(cfg.relatoriosPath)).filter(ehCsv);
       const escolhidos = escolherArquivos(arquivosEstaveis(primeira, segunda));
-      await progresso({ fase: "relatorios", totalArquivos: escolhidos.length });
       // d. cada arquivo, dentro do orçamento
       const t0 = deps.relogio.agora().getTime();
-      for (const [i, a] of escolhidos.entries()) {
+      for (const a of escolhidos) {
         if (deps.relogio.agora().getTime() - t0 >= ORCAMENTO_RELATORIOS_MS) break;
-        await progresso({ arquivoAtualIndice: i + 1, arquivoAtualNome: a.nome, mensagem: null });
         const caminho = `${cfg.relatoriosPath}/${a.nome}`;
         try {
           const bytes = await c.baixar(caminho);
           if (bytes.length > MAX_PARTE_BYTES) {
-            await progresso({ mensagem: "Dividindo" });
             const partes = dividirCsv(bytes);
             for (const [j, parte] of partes.entries()) {
-              await progresso({ mensagem: `Gravando parte ${j + 1} de ${partes.length}` });
               const destino = `${cfg.relatoriosPath}/${nomeParte(a.nome, j + 1)}`;
               if (await c.existe(destino)) await c.apagar(destino);
               await c.enviar(parte, `${destino}.tmp`);
@@ -238,7 +221,6 @@ export async function sincronizarFtp(
       }
       // f. retroativo: reenvia o que está em importados/ e nunca foi registrado
       if (opcoes.retroativo && (await c.existe(cfg.importadosPath))) {
-        await progresso({ fase: "retroativo" });
         const registrados = await deps.executar((r) => r.nomesDeArquivosRegistrados());
         const t1 = deps.relogio.agora().getTime();
         const dentro = () => deps.relogio.agora().getTime() - t1 < ORCAMENTO_RELATORIOS_MS;
@@ -285,7 +267,6 @@ export async function sincronizarFtp(
     return { status, mensagem };
   } finally {
     await conexao?.encerrar().catch(() => undefined);
-    await progresso({ fase: "concluido", finalizadoEm: deps.relogio.agora() });
     await deps.travas.liberar(travaDoFtp(empresaId), token);
   }
 }

@@ -1,18 +1,12 @@
 /**
  * Estado da ingestão no Redis (modelo.md: a fila de aplicação vira Redis): fila de aplicação por
- * empresa (conjunto ordenado), travas com dono e validade, progresso do FTP.
+ * empresa (conjunto ordenado), travas com dono e validade.
  */
 import { randomUUID } from "node:crypto";
 
 import { type Redis } from "ioredis";
 
-import {
-  type FaseDoFtp,
-  type FilaDeAplicacao,
-  type ProgressoDoFtp,
-  type Progressos,
-  type Travas,
-} from "../aplicacao/casos-de-uso/portas";
+import { type FilaDeAplicacao, type Travas } from "../aplicacao/casos-de-uso/portas";
 
 const PREFIXO = "erp:ingestao";
 const LOTE = 1000;
@@ -76,51 +70,6 @@ export function criarTravas(redis: Redis): Travas {
     },
     async liberar(nome, token) {
       await redis.eval(LIBERAR, 1, chave(nome), token);
-    },
-    ativa: async (nome) => (await redis.exists(chave(nome))) === 1,
-    async forcarLiberacao(nome) {
-      await redis.del(chave(nome));
-    },
-  };
-}
-
-const FASES: readonly FaseDoFtp[] = [
-  "conectando",
-  "processando",
-  "relatorios",
-  "retroativo",
-  "concluido",
-];
-
-export function criarProgressos(redis: Redis): Progressos {
-  const chave = (e: string) => `${PREFIXO}:ftp-progresso:${e}`;
-  return {
-    async gravar(e, p, agora) {
-      const campos: Record<string, string> = { heartbeatEm: agora.toISOString() };
-      for (const [k, v] of Object.entries(p)) {
-        campos[k] = v instanceof Date ? v.toISOString() : v === null ? "" : String(v);
-      }
-      await redis.hset(chave(e), campos);
-      await redis.expire(chave(e), 7 * 86_400);
-    },
-    async ler(e): Promise<ProgressoDoFtp | null> {
-      const c = await redis.hgetall(chave(e));
-      if (!c.fase) return null;
-      const data = (v: string | undefined) => (v ? new Date(v) : null);
-      const fase = FASES.find((f) => f === c.fase) ?? "concluido";
-      return {
-        fase,
-        totalArquivos: Number(c.totalArquivos ?? 0),
-        arquivoAtualIndice: Number(c.arquivoAtualIndice ?? 0),
-        arquivoAtualNome: c.arquivoAtualNome || null,
-        mensagem: c.mensagem || null,
-        iniciadoEm: data(c.iniciadoEm),
-        heartbeatEm: data(c.heartbeatEm),
-        finalizadoEm: data(c.finalizadoEm),
-      };
-    },
-    async limpar(e) {
-      await redis.del(chave(e));
     },
   };
 }

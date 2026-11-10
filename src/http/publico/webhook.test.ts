@@ -6,8 +6,12 @@ import { type FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { resumoDoSegredo } from "../../fontes/webhook/recepcao";
-import { criarContadorEmMemoria } from "../../infra/contador";
-import { appDeTeste, FilaDoWebhookFalsa, RecepcaoFalsa } from "../../testes/http";
+import {
+  appDeTeste,
+  criarContadorEmMemoria,
+  FilaDoWebhookFalsa,
+  RecepcaoFalsa,
+} from "../../testes/http";
 import { LIMITE_DE_FALHAS_POR_MINUTO } from "./webhook";
 
 const chaves = lerChavesDeSegredo(`1:${randomBytes(32).toString("base64")}`, 1);

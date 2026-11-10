@@ -1,17 +1,12 @@
-import { strToU8, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
 import { cteDeTeste } from "../../testes/cte";
 import {
   camposDoXml,
   casaPeloNumeroCte,
-  classificarXml,
   lerCancelamentoXml,
   lerCteXml,
-  LIMITES_DO_ZIP,
   numeroCteDaChave,
-  statusDoArquivoXml,
-  xmlsDoZip,
 } from "./";
 
 // CT-e fictício (CNPJs e chaves inventados), na estrutura do SSW1329.
@@ -55,34 +50,12 @@ describe("leitura do XML", () => {
     expect(lerCteXml(XML_CTE, new Set(["55666777000188"])).parceiroCnpj).toBeNull();
   });
 
-  it("classifica pelo nome e pela raiz; lê o cancelamento", () => {
-    expect(classificarXml("x-cte.xml", "")).toBe("cte");
-    expect(classificarXml("x.xml", XML_CAN)).toBe("can");
-    expect(classificarXml("x.xml", XML_CTE)).toBe("cte");
-    expect(classificarXml("x.xml", "<nada/>")).toBe("unknown");
+  it("lê o cancelamento", () => {
     expect(lerCancelamentoXml(XML_CAN)).toEqual({
       chaveCte: CHAVE,
       dhEvento: "2026-11-04T09:00:00-03:00",
     });
     expect(numeroCteDaChave(CHAVE)).toBe(55001);
-  });
-
-  it("extrai só os .xml do zip", () => {
-    const zip = zipSync({ "a/1-cte.xml": strToU8(XML_CTE), "leia.txt": strToU8("x") });
-    expect(xmlsDoZip(zip).map((x) => x.nome)).toEqual(["a/1-cte.xml"]);
-  });
-
-  it("recusa bomba de zip: um XML acima do teto ou o total acima do limite", () => {
-    // Zeros comprimem para quase nada: o zip é pequeno, o conteúdo, não.
-    const grande = new Uint8Array(LIMITES_DO_ZIP.porArquivo + 1);
-    const bomba = zipSync({ "bomba.xml": grande }, { level: 9 });
-    expect(bomba.length).toBeLessThan(100_000);
-    expect(() => xmlsDoZip(bomba)).toThrow(/grande demais dentro do zip/);
-
-    const parte = new Uint8Array(1000);
-    const muitos = zipSync({ "a.xml": parte, "b.xml": parte, "c.xml": parte });
-    expect(() => xmlsDoZip(muitos, { porArquivo: 1000, total: 2500 })).toThrow(/descompactado/);
-    expect(xmlsDoZip(muitos, { porArquivo: 1000, total: 3000 })).toHaveLength(3);
   });
 });
 
@@ -113,13 +86,5 @@ describe("regras do XML", () => {
       peso: "12.500",
     });
     expect(campos.remetente).toBeUndefined();
-  });
-
-  it("status do arquivo pelos XML de dentro", () => {
-    expect(statusDoArquivoXml(["pulado", "pulado"], 0, null)).toBe("duplicado");
-    expect(statusDoArquivoXml(["sucesso", "orfao"], 1, null)).toBe("parcial");
-    expect(statusDoArquivoXml(["erro"], 0, null)).toBe("erro");
-    expect(statusDoArquivoXml(["sucesso"], 1, null)).toBe("sucesso");
-    expect(statusDoArquivoXml([], 0, "zip inválido")).toBe("erro");
   });
 });

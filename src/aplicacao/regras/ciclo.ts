@@ -13,9 +13,6 @@ export const STATUS_CICLO_ABERTO = [
   "erro",
 ] as const;
 
-export type StatusArquivo =
-  "observado" | "importando" | "importado" | "ignorado" | "erro" | "descartado";
-
 export interface RelatorioEsperado {
   relatorio: string;
   porUnidade: boolean;

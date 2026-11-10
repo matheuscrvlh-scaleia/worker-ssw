@@ -1,12 +1,26 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  autenticarWebhook,
   type EmpresaDoWebhook,
   type EventoRecebido,
   LIMITE_DA_QUARENTENA_BYTES,
   LIMITE_DIARIO_DA_QUARENTENA,
-  receberWebhook,
+  type PortasDoWebhook,
+  processarWebhook,
+  type RequisicaoDoWebhook,
+  type RespostaDoWebhook,
 } from "./recepcao";
+
+/** As duas etapas juntas (a rota faz a primeira no `onRequest`, antes de ler o corpo). */
+async function receberWebhook(
+  portas: PortasDoWebhook,
+  req: RequisicaoDoWebhook,
+): Promise<RespostaDoWebhook> {
+  const autenticacao = await autenticarWebhook(portas, req);
+  if (autenticacao.tipo === "recusado") return autenticacao.resposta;
+  return processarWebhook(portas, req, autenticacao);
+}
 
 const SEGREDO = "x".repeat(40);
 const EVENTO = JSON.stringify({

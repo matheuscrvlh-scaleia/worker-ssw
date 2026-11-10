@@ -5,14 +5,6 @@
 export const RELATORIOS = ["036", "038", "306", "455csv", "930"] as const;
 export type Relatorio = (typeof RELATORIOS)[number];
 
-export const DESCRICAO_DO_RELATORIO: Record<Relatorio, string> = {
-  "036": "036 — Romaneios e CTRCs de Entrega",
-  "038": "038 — CTRCs Pendentes de Entrega",
-  "306": "306 — Situação de Uso do SSWMobile",
-  "455csv": "455 (CSV) — colunas configuráveis",
-  "930": "930 — Gera BD de Ocorrências",
-};
-
 /** Linha que não pôde ser lida: vai para `ingestao_erros` e aparece na prévia da tela. */
 export interface ErroDeLeitura {
   linha: number;

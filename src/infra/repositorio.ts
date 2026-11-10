@@ -32,7 +32,7 @@ import {
   montarCatalogo,
   type OcorrenciaDoCte,
 } from "@erp/dominio/nucleo";
-import { and, asc, count, desc, eq, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
 
 import {
   type ArquivoRegistrado,
@@ -55,18 +55,6 @@ function emBlocos<T>(itens: readonly T[], tamanho: number): T[][] {
   const blocos: T[][] = [];
   for (let i = 0; i < itens.length; i += tamanho) blocos.push(itens.slice(i, i + tamanho));
   return blocos;
-}
-
-/**
- * Quem age: usuário da tela (ou admin da Plataforma) ou o sistema (job, rota pública). Mesmo
- * formato do `Ator` da auditoria da API: IP e navegador vão para a linha de auditoria.
- */
-export interface AtorDaIngestao {
-  usuarioId: string;
-  email: string;
-  plataforma: boolean;
-  ip: string | null;
-  userAgent: string | null;
 }
 
 const CHAVES_DO_NUCLEO = [
@@ -129,11 +117,7 @@ function filtrarPelaChave<T extends { sigla: string | null; numero: string | nul
 
 const numeros = (chaves: readonly ChaveCte[]) => [...new Set(chaves.map((c) => c.numero))];
 
-export function criarRepositorioIngestao(
-  tx: Transacao,
-  empresaId: string,
-  ator: AtorDaIngestao | null,
-): RepositorioIngestao {
+export function criarRepositorioIngestao(tx: Transacao, empresaId: string): RepositorioIngestao {
   const daEmpresa = (t: { empresaId: Parameters<typeof eq>[0] }) => eq(t.empresaId, empresaId);
 
   const repo: RepositorioIngestao = {
@@ -170,23 +154,6 @@ export function criarRepositorioIngestao(
       return configuracoesVigentes(linhas);
     },
 
-    async gravarConfiguracao(chave, valor) {
-      await tx
-        .insert(configuracoes)
-        .values({
-          empresaId,
-          chave,
-          valor,
-          descricao: "",
-          grupo: "ingestao",
-          atualizadoPor: ator?.usuarioId ?? null,
-        })
-        .onConflictDoUpdate({
-          target: [configuracoes.empresaId, configuracoes.chave],
-          set: { valor, atualizadoEm: sql`now()`, atualizadoPor: ator?.usuarioId ?? null },
-        });
-    },
-
     async arquivoPorNome(nome) {
       const [a] = await tx
         .select()
@@ -217,16 +184,6 @@ export function criarRepositorioIngestao(
         .from(ingestaoArquivos)
         .where(daEmpresa(ingestaoArquivos));
       return new Set(linhas.map((l) => l.nome));
-    },
-
-    async ultimosArquivos(limite) {
-      const linhas = await tx
-        .select()
-        .from(ingestaoArquivos)
-        .where(daEmpresa(ingestaoArquivos))
-        .orderBy(desc(ingestaoArquivos.vistoEm))
-        .limit(limite);
-      return linhas.map(comoArquivo);
     },
 
     async garantirCiclo(cicloChave) {
@@ -271,16 +228,6 @@ export function criarRepositorioIngestao(
       return linhas.map(comoCiclo);
     },
 
-    async ultimosCiclos(limite) {
-      const linhas = await tx
-        .select()
-        .from(ingestaoCiclos)
-        .where(daEmpresa(ingestaoCiclos))
-        .orderBy(desc(ingestaoCiclos.cicloChave))
-        .limit(limite);
-      return linhas.map(comoCiclo);
-    },
-
     async fecharCiclosCobertos(ate, agora) {
       const linhas = await tx
         .update(ingestaoCiclos)
@@ -302,17 +249,6 @@ export function criarRepositorioIngestao(
         .from(ingestaoArquivos)
         .where(and(daEmpresa(ingestaoArquivos), eq(ingestaoArquivos.cicloChave, cicloChave)));
       return linhas.map(comoArquivo);
-    },
-
-    async marcarArquivosDescartados(cicloChave) {
-      await tx
-        .update(ingestaoArquivos)
-        .set({
-          status: "descartado",
-          mensagem: sql`coalesce(${ingestaoArquivos.mensagem}, '') || ' [ciclo descartado]'`,
-          atualizadoEm: sql`now()`,
-        })
-        .where(and(daEmpresa(ingestaoArquivos), eq(ingestaoArquivos.cicloChave, cicloChave)));
     },
 
     async relatoriosEsperados() {
@@ -476,24 +412,6 @@ export function criarRepositorioIngestao(
       return linhas.flatMap((l) =>
         l.sigla && l.numero ? [{ sigla: l.sigla, numero: l.numero }] : [],
       );
-    },
-
-    async apagarLotes(loteIds) {
-      if (loteIds.length === 0) return { linhas: 0, erros: 0, apagadas: [] };
-      const linhas = await tx
-        .delete(ingestaoLinhas)
-        .where(and(daEmpresa(ingestaoLinhas), inArray(ingestaoLinhas.loteId, [...loteIds])))
-        .returning({
-          relatorio: ingestaoLinhas.relatorio,
-          sigla: ingestaoLinhas.sigla,
-          numero: ingestaoLinhas.numero,
-          dados: ingestaoLinhas.dados,
-        });
-      const erros = await tx
-        .delete(ingestaoErros)
-        .where(and(daEmpresa(ingestaoErros), inArray(ingestaoErros.loteId, [...loteIds])))
-        .returning({ id: ingestaoErros.id });
-      return { linhas: linhas.length, erros: erros.length, apagadas: linhas };
     },
 
     async cadastrosDoNucleo() {
@@ -660,17 +578,17 @@ export function criarRepositorioIngestao(
     async auditar(evento) {
       await tx.insert(auditoria).values({
         empresaId,
-        atorId: ator?.usuarioId ?? null,
-        atorEmail: ator?.email ?? null,
-        atorTipo: ator ? (ator.plataforma ? "plataforma" : "usuario") : "sistema",
+        atorId: null,
+        atorEmail: null,
+        atorTipo: "sistema",
         acao: evento.acao,
         entidade: evento.entidade,
         entidadeId: evento.entidadeId,
         resumo: evento.resumo,
         antes: null,
         depois: evento.depois,
-        ip: ator?.ip ?? null,
-        userAgent: ator?.userAgent ?? null,
+        ip: null,
+        userAgent: null,
       });
     },
 
@@ -697,76 +615,6 @@ export function criarRepositorioIngestao(
           finalizadoEm: sql`now()`,
         })
         .where(and(daEmpresa(ingestaoAplicacoes), eq(ingestaoAplicacoes.id, id)));
-    },
-
-    async ultimasAplicacoes(limite) {
-      return tx
-        .select({
-          id: ingestaoAplicacoes.id,
-          status: ingestaoAplicacoes.status,
-          simulacao: ingestaoAplicacoes.simulacao,
-          totalInseridos: ingestaoAplicacoes.totalInseridos,
-          totalAtualizados: ingestaoAplicacoes.totalAtualizados,
-          totalOcorrencias: ingestaoAplicacoes.totalOcorrencias,
-          totalIgnorados: ingestaoAplicacoes.totalIgnorados,
-          erro: ingestaoAplicacoes.erro,
-          iniciadoEm: ingestaoAplicacoes.iniciadoEm,
-          finalizadoEm: ingestaoAplicacoes.finalizadoEm,
-          aplicadoPor: ingestaoAplicacoes.aplicadoPor,
-        })
-        .from(ingestaoAplicacoes)
-        .where(daEmpresa(ingestaoAplicacoes))
-        .orderBy(desc(ingestaoAplicacoes.iniciadoEm))
-        .limit(limite);
-    },
-
-    async arquivoXmlPorSha(sha256) {
-      const [a] = await tx
-        .select()
-        .from(xmlCteArquivos)
-        .where(and(daEmpresa(xmlCteArquivos), eq(xmlCteArquivos.sha256, sha256)));
-      return a ?? null;
-    },
-
-    async registrarArquivoXml(a) {
-      const [r] = await tx
-        .insert(xmlCteArquivos)
-        .values({ empresaId, ...a })
-        .onConflictDoUpdate({ target: [xmlCteArquivos.empresaId, xmlCteArquivos.sha256], set: a })
-        .returning({ id: xmlCteArquivos.id });
-      if (!r) throw new Error("Falha ao registrar o arquivo XML.");
-      return r.id;
-    },
-
-    async ultimosArquivosXml(limite) {
-      return tx
-        .select()
-        .from(xmlCteArquivos)
-        .where(daEmpresa(xmlCteArquivos))
-        .orderBy(desc(xmlCteArquivos.criadoEm))
-        .limit(limite);
-    },
-
-    async itemXmlJaAplicado(sha256Xml) {
-      const [i] = await tx
-        .select({ id: xmlCteItens.id })
-        .from(xmlCteItens)
-        .where(
-          and(
-            daEmpresa(xmlCteItens),
-            eq(xmlCteItens.sha256Xml, sha256Xml),
-            eq(xmlCteItens.status, "sucesso"),
-          ),
-        )
-        .limit(1);
-      return i !== undefined;
-    },
-
-    async registrarItemXml(item) {
-      await tx
-        .insert(xmlCteItens)
-        .values({ empresaId, ...item })
-        .onConflictDoNothing();
     },
 
     async promoverItemXml(sha256Xml) {
@@ -828,13 +676,6 @@ export function criarRepositorioIngestao(
       return c ? comoCte(c) : null;
     },
 
-    async guardarOrfao(o, expiraEm) {
-      await tx
-        .insert(xmlCteOrfaos)
-        .values({ empresaId, ...o, expiraEm })
-        .onConflictDoNothing();
-    },
-
     async expirarOrfaos(agora) {
       const feitos = await tx
         .update(xmlCteOrfaos)
@@ -880,39 +721,8 @@ export function criarRepositorioIngestao(
         .where(and(daEmpresa(xmlCteOrfaos), eq(xmlCteOrfaos.id, id)));
     },
 
-    async estatisticasDosOrfaos() {
-      const [r] = await tx
-        .select({
-          pendentes: sql<number>`count(*) filter (where ${xmlCteOrfaos.status} = 'pendente')::int`,
-          expirados: sql<number>`count(*) filter (where ${xmlCteOrfaos.status} = 'expirado')::int`,
-          casados: sql<number>`count(*) filter (where ${xmlCteOrfaos.status} = 'casado')::int`,
-          maisAntigo: sql<Date | null>`min(${xmlCteOrfaos.criadoEm}) filter (where ${xmlCteOrfaos.status} = 'pendente')`,
-        })
-        .from(xmlCteOrfaos)
-        .where(daEmpresa(xmlCteOrfaos));
-      return {
-        pendentes: r?.pendentes ?? 0,
-        expirados: r?.expirados ?? 0,
-        casados: r?.casados ?? 0,
-        maisAntigo: r?.maisAntigo ? new Date(r.maisAntigo) : null,
-      };
-    },
-
     async registrarSincronizacao(s) {
       await tx.insert(xmlFtpSincronizacoes).values({ empresaId, ...s });
-    },
-
-    async ultimasSincronizacoes(limite) {
-      const linhas = await tx
-        .select()
-        .from(xmlFtpSincronizacoes)
-        .where(daEmpresa(xmlFtpSincronizacoes))
-        .orderBy(desc(xmlFtpSincronizacoes.executadoEm))
-        .limit(limite);
-      return linhas.map((l) => ({
-        ...l,
-        erros: Array.isArray(l.erros) ? l.erros.map(String) : [],
-      }));
     },
   };
   return repo;
@@ -988,7 +798,7 @@ export function criarRepositorioDeRetencao(tx: Transacao): RepositorioDeRetencao
 
 /** Só a gravação do núcleo do CT-e (BI2 e webhook no worker): a mesma do repositório da ingestão. */
 export function criarRepositorioCteNucleo(tx: Transacao, empresaId: string): RepositorioCteNucleo {
-  const r = criarRepositorioIngestao(tx, empresaId, null);
+  const r = criarRepositorioIngestao(tx, empresaId);
   return {
     cadastrosDoNucleo: () => r.cadastrosDoNucleo(),
     ocorrenciasDosCtes: (ids) => r.ocorrenciasDosCtes(ids),

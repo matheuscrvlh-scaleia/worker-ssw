@@ -9,7 +9,7 @@ import {
 } from "../fontes/webhook/recepcao";
 import { type RepositorioRecepcaoWebhook } from "../fontes/webhook/repositorio-recepcao";
 import { construirApp, type DependenciasHttp } from "../http/app";
-import { criarContadorEmMemoria } from "../infra/contador";
+import { type ContadorPorJanela } from "../infra/contador";
 import { type Execucoes } from "../infra/execucoes";
 import { enfileiradorFalso, estadoFalso, executarFalso } from "./falsos";
 
@@ -58,6 +58,23 @@ export class FilaDoWebhookFalsa implements FilaDoWebhook {
     this.enfileirados.push({ job, dados, deduplicar });
     return Promise.resolve();
   }
+}
+
+/** Contador por janela na memória (no lugar do Redis). */
+export function criarContadorEmMemoria(
+  janelaMs: number,
+  agora: () => number = Date.now,
+): ContadorPorJanela {
+  const janelas = new Map<string, { ate: number; total: number }>();
+  return {
+    somar: (chave) => {
+      const atual = janelas.get(chave);
+      const janela = atual && atual.ate > agora() ? atual : { ate: agora() + janelaMs, total: 0 };
+      janela.total += 1;
+      janelas.set(chave, janela);
+      return Promise.resolve(janela.total);
+    },
+  };
 }
 
 export const execucoesQueNaoDevemSerUsadas: Execucoes = {

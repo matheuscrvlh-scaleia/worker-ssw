@@ -3,7 +3,7 @@
  * a linha de relatório guardada e as conversões de fuso.
  */
 import { type ctes } from "@erp/db/schema";
-import { type CteNucleo, FUSO_DO_NEGOCIO } from "@erp/dominio/nucleo";
+import { type CteNucleo } from "@erp/dominio/nucleo";
 
 /** Linha de `ctes` com os tipos do núcleo (ex.: `ocorrEfetivaFonte` fechado). */
 export type CteDaIngestao = Omit<typeof ctes.$inferSelect, keyof CteNucleo> & CteNucleo;
@@ -35,8 +35,6 @@ export function chaveDeTexto(texto: string): ChaveCte {
 // Brasília não tem horário de verão desde 2019: deslocamento fixo (igual ao núcleo).
 const DESLOCAMENTO_SP = "-03:00";
 const MS_SP = 3 * 3_600_000;
-export const FUSO_SP = FUSO_DO_NEGOCIO;
-
 /** "aaaa-mm-ddThh:mm[:ss]" (hora de São Paulo, sem fuso) → instante. `zonedToUtc(x, SP)`. */
 export function instanteSp(ingenuo: string): Date {
   const iso = ingenuo.replace(" ", "T");

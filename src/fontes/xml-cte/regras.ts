@@ -92,23 +92,3 @@ export function camposDoXml(
   }
   return campos;
 }
-
-export type StatusDoArquivoXml = "sucesso" | "erro" | "parcial" | "duplicado";
-export type StatusDoItemXml = "sucesso" | "erro" | "orfao" | "pulado";
-
-/** Status do arquivo pelo resultado dos XML de dentro. */
-export function statusDoArquivoXml(
-  itens: readonly StatusDoItemXml[],
-  aplicados: number,
-  erroGeral: string | null,
-): StatusDoArquivoXml {
-  if (erroGeral !== null) return "erro";
-  if (itens.length > 0 && itens.every((s) => s === "pulado")) return "duplicado";
-  const teveErro = itens.includes("erro");
-  if (teveErro && aplicados === 0) return "erro";
-  if (teveErro || itens.includes("orfao")) return "parcial";
-  return "sucesso";
-}
-
-/** Órfão espera o CT-e chegar por 5 dias. */
-export const DIAS_DO_ORFAO = 5;

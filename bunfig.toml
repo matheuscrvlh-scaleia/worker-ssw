@@ -1,0 +1,4 @@
+[install]
+# Guarda de supply chain: não instala versão publicada há menos de 24 h (igual ao erp-ssw).
+# Exceção só com aprovação do dono do projeto.
+minimumReleaseAge = 86400

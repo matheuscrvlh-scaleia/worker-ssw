@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "worker-ssw (estrito, igual à base do erp-ssw)",
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"],
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedSideEffectImports": true,
+    "allowUnreachableCode": false,
+
+    // Cópias do erp-ssw (README, "Arquivos copiados") com os mesmos imports da origem: o arquivo
+    // fica idêntico ao do ERP e a sincronia é um diff. esbuild e vitest leem estes mesmos caminhos.
+    "paths": {
+      "@erp/dominio/nucleo": ["./src/dominio/nucleo/index.ts"],
+      "@erp/dominio/*": ["./src/dominio/*"],
+      "@erp/shared/*": ["./src/compartilhado/*"],
+      "@erp/db": ["./src/banco/index.ts"],
+      "@erp/db/schema": ["./src/banco/schema/index.ts"],
+      "@erp/db/segredos": ["./src/banco/segredos.ts"]
+    }
+  },
+  "include": ["src", "vitest.config.ts"]
+}

@@ -1,0 +1,55 @@
+{
+  "name": "worker-ssw",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Worker do SSW: busca, recebe e aplica o dado do SSW no schema erp (ADR 0012 do ERP SSW).",
+  "packageManager": "bun@1.4.2",
+  "engines": {
+    "node": ">=22.12.0",
+    "bun": ">=1.4.0"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env --import tsx src/main.ts",
+    "build": "node build.mjs",
+    "start": "node --enable-source-maps dist/main.js",
+    "reconstruir-projecoes": "node --env-file-if-exists=.env --import tsx src/main.ts reconstruir-projecoes",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . && prettier --check .",
+    "test": "vitest run",
+    "test:cobertura": "vitest run --coverage",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@fastify/rate-limit": "^10.3.0",
+    "bullmq": "^5.81.5",
+    "drizzle-orm": "^0.45.4",
+    "fast-xml-parser": "^5.12.0",
+    "fastify": "^5.12.8",
+    "fastify-type-provider-zod": "^6.1.0",
+    "fflate": "^0.8.3",
+    "ioredis": "^5.11.1",
+    "pg": "^8.23.1",
+    "pino": "^9.14.0",
+    "prom-client": "^15.1.3",
+    "ssh2-sftp-client": "^12.1.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
+    "@types/ssh2-sftp-client": "^9.0.6",
+    "@vitest/coverage-v8": "^4.1.12",
+    "esbuild": "^0.25.12",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "globals": "^16.5.0",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^4.1.12"
+  }
+}

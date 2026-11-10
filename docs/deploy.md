@@ -62,11 +62,11 @@ senha/token saem mascarados. Rotação: 5 arquivos de 20 MB por contêiner.
 
 Cada processo abre até `DB_MAX_CONEXOES` (padrão 5). No pior caso o worker-ssw usa:
 
-| Situação                                         | Conexões |
-| ------------------------------------------------ | -------- |
-| Rodando normal                                   | 5        |
-| Durante a atualização (duas réplicas)            | 10       |
-| `reconstruir-projecoes` com o serviço no ar      | 10       |
+| Situação                                    | Conexões |
+| ------------------------------------------- | -------- |
+| Rodando normal                              | 5        |
+| Durante a atualização (duas réplicas)       | 10       |
+| `reconstruir-projecoes` com o serviço no ar | 10       |
 
 Some isso ao que o ERP já usa (API × réplicas + worker do ERP + migrador) e confira contra o
 limite do pooler do Supabase antes de subir `DB_MAX_CONEXOES`.

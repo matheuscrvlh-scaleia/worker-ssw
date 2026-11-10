@@ -1,0 +1,188 @@
+# CI do worker-ssw (mesmo modelo do erp-ssw). Jobs em paralelo:
+#   verificar     tipos, ESLint, Prettier, testes com cobertura e build
+#   dependencias  vulnerabilidades no bun.lock (osv-scanner)
+#   imagem        build da imagem (sem push) + Trivy (vulnerabilidade e segredo)
+#   infra         compose.yaml, Dockerfile (hadolint) e workflows (actionlint)
+#   segredos      gitleaks no histórico
+#
+# Actions de terceiros e imagens de ferramenta fixadas por SHA/digest (a tag ao lado é só para
+# leitura). Atualizar trocando os dois juntos, com versão publicada há mais de 24 h (bunfig.toml).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Em sincronia com "packageManager" do package.json e com o oven/bun do Dockerfile.
+  BUN_VERSION: 1.4.2
+  # Mesma linha do Node da imagem (distroless nodejs22).
+  NODE_VERSION: 22
+  TRIVY_VERSION: v0.76.2
+
+jobs:
+  verificar:
+    name: Tipos, lint, testes e build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache do bun
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      # --frozen-lockfile: o bun.lock manda; bunfig.toml (minimumReleaseAge) vale aqui também.
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+
+      - name: Checagem de tipos
+        run: bun run typecheck
+
+      - name: ESLint
+        run: bunx eslint .
+
+      - name: Prettier
+        run: bunx prettier --check .
+
+      - name: Testes com cobertura
+        run: bun run test:cobertura
+
+      - name: Relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cobertura
+          path: coverage
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Build
+        run: bun run build
+
+  dependencias:
+    name: Vulnerabilidades nas dependências
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # O bun.lock inteiro (runtime e desenvolvimento): achado com correção = falha.
+      - name: osv-scanner no bun.lock
+        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        with:
+          scan-args: |-
+            --lockfile=bun.lock
+
+  imagem:
+    name: Imagem worker-ssw
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build (sem push)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: false
+          load: true
+          tags: worker-ssw:ci
+          build-args: |
+            VERSAO=ci
+            COMMIT=${{ github.sha }}
+          cache-from: type=gha,scope=worker-ssw
+          cache-to: type=gha,mode=max,scope=worker-ssw
+
+      - name: Tamanho da imagem
+        run: >-
+          docker image ls worker-ssw:ci --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+          | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Trivy na imagem
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          scan-type: image
+          image-ref: worker-ssw:ci
+          scanners: vuln,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+  infra:
+    name: Compose, Dockerfile e workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      HADOLINT_IMAGEM: hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d
+      ACTIONLINT_IMAGEM: rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Valores de mentira só para interpolar (nada aqui é segredo nem sai do job).
+      - name: compose.yaml
+        run: |
+          cp .env.example .env
+          cat >> .env <<'EOF'
+          IMAGEM_TAG=ci
+          DATABASE_URL=postgres://erp_worker:x@banco.invalido:5432/postgres
+          REDIS_SENHA=ci
+          INTERNO_TOKENS=ci-ci-ci-ci-ci-ci-ci-ci-ci-ci-ci-ci
+          SEGREDOS_CHAVES=1:ci
+          EOF
+          docker compose config --quiet
+
+      - name: hadolint
+        run: docker run --rm -i "$HADOLINT_IMAGEM" hadolint - < Dockerfile
+
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo:ro" -w /repo "$ACTIONLINT_IMAGEM" -color
+
+  segredos:
+    name: Segredos (gitleaks)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GITLEAKS_IMAGEM: ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Binário oficial em contêiner (sem licença nem token): histórico inteiro, valor mascarado.
+      - name: gitleaks
+        run: >-
+          docker run --rm -v "$PWD:/repo:ro" "$GITLEAKS_IMAGEM"
+          git /repo --redact --no-banner --verbose

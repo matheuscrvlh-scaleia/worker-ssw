@@ -15,11 +15,11 @@ import { sql } from "drizzle-orm";
 import { Redis } from "ioredis";
 import { pino } from "pino";
 
-import { criarOperacoesManuais, type Transacional } from "./aplicacao/casos-de-uso";
+import { criarOperacoesManuais, type Transacional, travaDoCiclo } from "./aplicacao/casos-de-uso";
 import { type ColunaDoBanco, conferirSchema } from "./banco/contrato-de-schema";
 import { lerAlvo, reconstruirProjecoes, USO_DA_RECONSTRUCAO } from "./cli/reconstruir-projecoes";
 import { carregarAmbiente } from "./config/ambiente";
-import { type JobPedivel, JOBS_PEDIVEIS } from "./contrato-interno";
+import { type JobAcompanhado, JOBS_ACOMPANHADOS } from "./contrato-interno";
 import { criarRepositorioBi2 } from "./fontes/bi2/repositorio";
 import { exigirEmpresa } from "./fontes/comum/empresa";
 import { criarCofre } from "./fontes/comum/integracao";
@@ -167,14 +167,14 @@ const jobs = criarJobs({
   esperar: (ms) => esperar(ms),
 });
 
-const filaDoPedivel = new Map(
-  JOBS_PEDIVEIS.map((job) => {
+const filaDoAcompanhado = new Map(
+  JOBS_ACOMPANHADOS.map((job) => {
     const definicao = jobs.find((d) => d.nome === job);
-    if (!definicao) throw new Error(`Job pedível sem registro: ${job}`);
+    if (!definicao) throw new Error(`Job da situação sem registro: ${job}`);
     return [job, definicao.fila];
   }),
 );
-const filaDe = (job: JobPedivel) => filas.fila(filaDoPedivel.get(job) ?? job);
+const filaDe = (job: JobAcompanhado) => filas.fila(filaDoAcompanhado.get(job) ?? job);
 
 const workers: Worker[] = [];
 const { app, metricas } = await construirApp({
@@ -226,6 +226,10 @@ const { app, metricas } = await construirApp({
       filaDoJob: filaDe,
       agendador: filas.fila("agendador"),
       tokenSswGeradoEm: (empresaId) => geradoEmDoToken(redis, empresaId),
+      aplicacao: async (empresaId) => ({
+        pendentes: await servicosDaIngestao.fila.contar(empresaId),
+        rodando: await servicosDaIngestao.travas.ativa(travaDoCiclo(empresaId)),
+      }),
       esperar: (ms) => esperar(ms),
     }),
     manuais: criarOperacoesManuais({

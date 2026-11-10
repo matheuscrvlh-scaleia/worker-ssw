@@ -18,6 +18,7 @@ function job(
     name,
     data: { empresaId: extra.empresaId ?? A },
     failedReason: extra.failedReason ?? "",
+    attemptsMade: extra.attemptsMade ?? 1,
     returnvalue: extra.returnvalue ?? null,
     finishedOn: extra.finishedOn,
     get estado() {
@@ -64,6 +65,11 @@ class FilaFalsa implements FilaConsultavel {
     const next = this.agendamentos.get(id);
     return Promise.resolve(next === undefined ? undefined : { next });
   }
+  getJobCounts(...tipos: string[]) {
+    const contagem: Record<string, number> = {};
+    for (const t of tipos) contagem[t] = this.jobs.filter((j) => j.estado === t).length;
+    return Promise.resolve(contagem);
+  }
 }
 
 function montar() {
@@ -76,6 +82,10 @@ function montar() {
     agendador,
     tokenSswGeradoEm: (empresaId) =>
       Promise.resolve(empresaId === A ? new Date("2026-11-10T11:25:00Z") : null),
+    aplicacao: (empresaId) =>
+      Promise.resolve(
+        empresaId === A ? { pendentes: 1520, rodando: true } : { pendentes: 0, rodando: false },
+      ),
     esperar: (ms) => {
       esperas.push(ms);
       const ultimo = fila.jobs.at(-1);
@@ -125,11 +135,13 @@ describe("execuções no BullMQ", () => {
 
   it("situação: estado da mais recente da empresa, última terminada e próxima agendada", async () => {
     const { fila, agendador, execucoes } = montar();
+    const falha = "Falha ao executar o job. Tente de novo; se persistir, avise o suporte.";
     fila.jobs.push(
       job("1", "sincronizar-ftp", "completed", { finishedOn: Date.parse("2026-11-10T12:00:00Z") }),
       job("2", "sincronizar-ftp", "failed", {
         finishedOn: Date.parse("2026-11-10T12:01:00Z"),
-        failedReason: "Falha ao executar o job. Tente de novo; se persistir, avise o suporte.",
+        failedReason: falha,
+        attemptsMade: 3,
       }),
       job("3", "sincronizar-ftp", "active", { empresaId: B }),
       job("4", "bi2-0017", "waiting"),
@@ -138,29 +150,63 @@ describe("execuções no BullMQ", () => {
     const situacao = await execucoes.situacao(A);
     expect(situacaoDaEmpresa.parse(situacao)).toEqual(situacao);
     expect(situacao.tokenSswGeradoEm).toBe("2026-11-10T11:25:00.000Z");
-    expect(situacao.jobs.find((j) => j.job === "sincronizar-ftp")).toEqual({
+    expect(situacao.aplicacao).toEqual({ pendentes: 1520, rodando: true });
+    expect(situacao.jobs.map((j) => j.job)).toContain("sla-arquivos");
+    expect(situacao.jobs.find((j) => j.job === "sincronizar-ftp")).toMatchObject({
       job: "sincronizar-ftp",
       estado: "falhou",
       ultimaExecucao: {
         execucaoId: "2",
         estado: "falhou",
         terminadaEm: "2026-11-10T12:01:00.000Z",
-        erro: "Falha ao executar o job. Tente de novo; se persistir, avise o suporte.",
+        erro: falha,
       },
       proximaExecucao: "2026-11-10T12:02:00.000Z",
+      agendado: true,
+      ultimasFalhas: [
+        { execucaoId: "2", quando: "2026-11-10T12:01:00.000Z", erro: falha, tentativas: 3 },
+      ],
     });
-    expect(situacao.jobs.find((j) => j.job === "bi2-0017")).toEqual({
+    expect(situacao.jobs.find((j) => j.job === "bi2-0017")).toMatchObject({
       job: "bi2-0017",
       estado: "na_fila",
+      agendado: false,
     });
-    expect(situacao.jobs.find((j) => j.job === "aplicar-ciclos")).toEqual({
+    expect(situacao.jobs.find((j) => j.job === "aplicar-ciclos")).toMatchObject({
       job: "aplicar-ciclos",
       estado: "sem_execucao",
+      ultimasFalhas: [],
     });
-    expect((await execucoes.situacao(B)).jobs.find((j) => j.job === "sincronizar-ftp")).toEqual({
+    expect(
+      (await execucoes.situacao(B)).jobs.find((j) => j.job === "sincronizar-ftp"),
+    ).toMatchObject({
       job: "sincronizar-ftp",
       estado: "rodando",
       proximaExecucao: "2026-11-10T12:02:00.000Z",
+      ultimasFalhas: [],
     });
+  });
+
+  it("situação: contagens da fila, atrasados e no máximo 3 falhas da empresa, da mais nova", async () => {
+    const { fila, execucoes } = montar();
+    const em = (min: number) => Date.parse(`2026-11-10T12:0${String(min)}:00Z`);
+    fila.jobs.push(
+      job("w", "aplicar-ciclos", "waiting"),
+      job("p", "aplicar-ciclos", "prioritized", { empresaId: B }),
+      job("a", "aplicar-ciclos", "active"),
+      job("d", "aplicar-ciclos", "delayed"),
+      ...[1, 2, 3, 4].map((m) =>
+        job(`f${String(m)}`, "aplicar-ciclos", "failed", {
+          finishedOn: em(m),
+          failedReason: `erro ${String(m)}`,
+        }),
+      ),
+      job("fb", "aplicar-ciclos", "failed", { empresaId: B, finishedOn: em(5) }),
+    );
+    const situacao = await execucoes.situacao(A);
+    const aplicar = situacao.jobs.find((j) => j.job === "aplicar-ciclos");
+    expect(aplicar).toMatchObject({ naFila: 2, rodando: 1, atrasados: 1, falhos: 5 });
+    expect(aplicar?.ultimasFalhas.map((f) => f.execucaoId)).toEqual(["f4", "f3", "f2"]);
+    expect(situacaoDaEmpresa.parse(situacao)).toEqual(situacao);
   });
 });

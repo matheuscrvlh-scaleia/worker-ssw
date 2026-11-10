@@ -1,6 +1,6 @@
 /**
  * Execuções pedidas pelo ERP (HTTP interno) sobre as filas do BullMQ: criar, consultar e a
- * situação dos jobs de uma empresa. O ERP não enxerga este Redis; só fala com estas três funções.
+ * situação dos jobs de uma empresa (com as contagens das filas e as últimas falhas). O ERP não enxerga este Redis; só fala com estas três funções.
  */
 import { randomUUID } from "node:crypto";
 
@@ -8,8 +8,10 @@ import { type JobType } from "bullmq";
 
 import {
   type EstadoDaExecucao,
+  type JobAcompanhado,
   type JobPedivel,
-  JOBS_PEDIVEIS,
+  JOBS_ACOMPANHADOS,
+  MAX_ULTIMAS_FALHAS,
   type SituacaoDaEmpresa,
   type SituacaoDaExecucao,
 } from "../contrato-interno";
@@ -21,6 +23,7 @@ export interface JobDaFila {
   data: unknown;
   finishedOn?: number | undefined;
   failedReason: string;
+  attemptsMade: number;
   returnvalue: unknown;
   getState(): Promise<string>;
 }
@@ -35,6 +38,7 @@ export interface FilaConsultavel {
   getJob(id: string): Promise<JobDaFila | undefined>;
   getJobs(tipos: JobType[], inicio: number, fim: number): Promise<JobDaFila[]>;
   getJobScheduler(id: string): Promise<{ next?: number | undefined } | undefined>;
+  getJobCounts(...tipos: JobType[]): Promise<Record<string, number>>;
 }
 
 export type ResultadoDoPedido = { criada: true; execucaoId: string } | { criada: false };
@@ -57,9 +61,11 @@ export interface Execucoes {
 
 export interface DependenciasDasExecucoes {
   /** Fila de cada job (a mesma do registro dos jobs). */
-  filaDoJob(job: JobPedivel): FilaConsultavel;
+  filaDoJob(job: JobAcompanhado): FilaConsultavel;
   agendador: FilaConsultavel;
   tokenSswGeradoEm(empresaId: string): Promise<Date | null>;
+  /** Fila de aplicação da ingestão da empresa (Redis) e se a aplicação está rodando. */
+  aplicacao(empresaId: string): Promise<{ pendentes: number; rodando: boolean }>;
   esperar(ms: number): Promise<void>;
   gerarId?: () => string;
 }
@@ -93,17 +99,20 @@ export function criarExecucoes(deps: DependenciasDasExecucoes): Execucoes {
     return { estado };
   }
 
-  async function situacaoDoJob(empresaId: string, nome: JobPedivel) {
+  async function situacaoDoJob(empresaId: string, nome: JobAcompanhado) {
     const fila = deps.filaDoJob(nome);
     const daEmpresa = (j: JobDaFila) => j.name === nome && empresaDo(j) === empresaId;
-    const [ativos, esperando, concluidos, falhos, porEmpresa, global] = await Promise.all([
-      fila.getJobs(["active"], 0, JANELA_DO_HISTORICO - 1),
-      fila.getJobs(NA_FILA, 0, JANELA_DO_HISTORICO - 1),
-      fila.getJobs(["completed"], 0, JANELA_DO_HISTORICO - 1),
-      fila.getJobs(["failed"], 0, JANELA_DO_HISTORICO - 1),
-      fila.getJobScheduler(`${nome}:${empresaId}`),
-      deps.agendador.getJobScheduler(`ingestao:${nome}`),
-    ]);
+    const [contagem, ativos, esperando, concluidos, falhos, porEmpresa, global] = await Promise.all(
+      [
+        fila.getJobCounts("waiting", "prioritized", "active", "delayed", "failed"),
+        fila.getJobs(["active"], 0, JANELA_DO_HISTORICO - 1),
+        fila.getJobs(NA_FILA, 0, JANELA_DO_HISTORICO - 1),
+        fila.getJobs(["completed"], 0, JANELA_DO_HISTORICO - 1),
+        fila.getJobs(["failed"], 0, JANELA_DO_HISTORICO - 1),
+        fila.getJobScheduler(`${nome}:${empresaId}`),
+        deps.agendador.getJobScheduler(`ingestao:${nome}`),
+      ],
+    );
     const terminados = [
       ...concluidos.filter(daEmpresa).map((j) => ({ j, estado: "concluida" as const })),
       ...falhos.filter(daEmpresa).map((j) => ({ j, estado: "falhou" as const })),
@@ -124,11 +133,27 @@ export function criarExecucoes(deps: DependenciasDasExecucoes): Execucoes {
         ? ("na_fila" as const)
         : (ultimaExecucao?.estado ?? ("sem_execucao" as const));
     const proxima = porEmpresa?.next ?? global?.next;
+    const ultimasFalhas = falhos
+      .filter(daEmpresa)
+      .sort((a, b) => (b.finishedOn ?? 0) - (a.finishedOn ?? 0))
+      .slice(0, MAX_ULTIMAS_FALHAS)
+      .map((j) => ({
+        execucaoId: j.id ?? "",
+        quando: new Date(j.finishedOn ?? 0).toISOString(),
+        erro: j.failedReason,
+        tentativas: j.attemptsMade,
+      }));
     return {
       job: nome,
       estado,
       ...(ultimaExecucao ? { ultimaExecucao } : {}),
       ...(proxima !== undefined ? { proximaExecucao: new Date(proxima).toISOString() } : {}),
+      agendado: porEmpresa !== undefined || global !== undefined,
+      naFila: (contagem["waiting"] ?? 0) + (contagem["prioritized"] ?? 0),
+      rodando: contagem["active"] ?? 0,
+      atrasados: contagem["delayed"] ?? 0,
+      falhos: contagem["failed"] ?? 0,
+      ultimasFalhas,
     };
   }
 
@@ -159,11 +184,12 @@ export function criarExecucoes(deps: DependenciasDasExecucoes): Execucoes {
     },
 
     async situacao(empresaId) {
-      const [jobs, token] = await Promise.all([
-        Promise.all(JOBS_PEDIVEIS.map((j) => situacaoDoJob(empresaId, j))),
+      const [jobs, aplicacao, token] = await Promise.all([
+        Promise.all(JOBS_ACOMPANHADOS.map((j) => situacaoDoJob(empresaId, j))),
+        deps.aplicacao(empresaId),
         deps.tokenSswGeradoEm(empresaId),
       ]);
-      return { jobs, ...(token ? { tokenSswGeradoEm: token.toISOString() } : {}) };
+      return { jobs, aplicacao, ...(token ? { tokenSswGeradoEm: token.toISOString() } : {}) };
     },
   };
 }

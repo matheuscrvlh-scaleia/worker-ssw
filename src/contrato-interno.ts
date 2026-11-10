@@ -94,11 +94,24 @@ export const situacaoDaExecucao = z.object({
 });
 export type SituacaoDaExecucao = z.infer<typeof situacaoDaExecucao>;
 
+/**
+ * Jobs que aparecem na situação (Diagnóstico SSW): os pedíveis e os que só o agendador dispara.
+ */
+export const JOBS_ACOMPANHADOS = [
+  ...JOBS_PEDIVEIS,
+  "sla-arquivos",
+  "limpar-ingestao-arquivos",
+] as const;
+export type JobAcompanhado = (typeof JOBS_ACOMPANHADOS)[number];
+
+/** Quantas falhas recentes da empresa a situação traz por job. */
+export const MAX_ULTIMAS_FALHAS = 3;
+
 /** GET `/interno/v1/empresas/:empresaId/situacao` */
 export const situacaoDaEmpresa = z.object({
   jobs: z.array(
     z.object({
-      job: z.enum(JOBS_PEDIVEIS),
+      job: z.enum(JOBS_ACOMPANHADOS),
       /** Da execução mais recente da empresa; `sem_execucao` se não há nenhuma no histórico. */
       estado: z.enum([...ESTADOS_DA_EXECUCAO, "sem_execucao"]),
       ultimaExecucao: z
@@ -110,8 +123,34 @@ export const situacaoDaEmpresa = z.object({
         })
         .optional(),
       proximaExecucao: z.iso.datetime().optional(),
+      /** Há agendamento (cron) deste job, global ou da empresa. */
+      agendado: z.boolean(),
+      /** Contagens da fila do job (todas as empresas), como o Diagnóstico SSW mostrava. */
+      naFila: z.number().int().min(0),
+      rodando: z.number().int().min(0),
+      /** Esperando o horário (nova tentativa com espera ou execução adiada). */
+      atrasados: z.number().int().min(0),
+      falhos: z.number().int().min(0),
+      /** Falhas recentes desta empresa, da mais nova para a mais antiga; `erro` é para o operador. */
+      ultimasFalhas: z
+        .array(
+          z.object({
+            execucaoId: z.string(),
+            quando: z.iso.datetime(),
+            erro: z.string(),
+            tentativas: z.number().int().min(0),
+          }),
+        )
+        .max(MAX_ULTIMAS_FALHAS),
     }),
   ),
+  /** Fila de aplicação da ingestão por arquivo (Importação SSW: "Na fila" e "aplicando"). */
+  aplicacao: z.object({
+    /** Chaves de CT-e esperando a aplicação. */
+    pendentes: z.number().int().min(0),
+    /** A aplicação (automática ou manual) está rodando agora. */
+    rodando: z.boolean(),
+  }),
   /** Quando o token da SSW API em uso foi gerado (faixa de saúde do ERP). */
   tokenSswGeradoEm: z.iso.datetime().optional(),
 });
@@ -287,9 +326,32 @@ export const EXEMPLOS = {
           terminadaEm: "2026-11-10T12:01:30.000Z",
         },
         proximaExecucao: "2026-11-10T12:02:00.000Z",
+        agendado: true,
+        naFila: 1,
+        rodando: 1,
+        atrasados: 0,
+        falhos: 2,
+        ultimasFalhas: [
+          {
+            execucaoId: "sincronizar-ftp-0",
+            quando: "2026-11-10T11:31:10.000Z",
+            erro: "Falha ao executar o job. Tente de novo; se persistir, avise o suporte.",
+            tentativas: 3,
+          },
+        ],
       },
-      { job: "bi2-0017", estado: "sem_execucao" },
+      {
+        job: "bi2-0017",
+        estado: "sem_execucao",
+        agendado: false,
+        naFila: 0,
+        rodando: 0,
+        atrasados: 0,
+        falhos: 0,
+        ultimasFalhas: [],
+      },
     ],
+    aplicacao: { pendentes: 1520, rodando: false },
     tokenSswGeradoEm: "2026-11-10T11:25:00.000Z",
   } satisfies SituacaoDaEmpresa,
   erro: {

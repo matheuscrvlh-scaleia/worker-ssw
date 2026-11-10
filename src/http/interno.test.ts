@@ -1,4 +1,5 @@
 import { ErroDeNegocio } from "@erp/dominio/erros";
+import { JOBS_DE_INGESTAO } from "@erp/shared/ingestao";
 import { type FastifyInstance } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -7,6 +8,7 @@ import {
   erroInterno,
   EXEMPLOS,
   type JobPedivel,
+  JOBS_ACOMPANHADOS,
   JOBS_PEDIVEIS,
   LIMITE_DO_ARQUIVO_EM_BASE64,
 } from "../contrato-interno";
@@ -356,5 +358,14 @@ describe("contrato interno x jobs registrados", () => {
         true,
       );
     }
+  });
+
+  it("a situação cobre todos os jobs do Diagnóstico SSW, e cada um tem fila registrada", () => {
+    for (const { job } of JOBS_DE_INGESTAO) expect(JOBS_ACOMPANHADOS, job).toContain(job);
+    for (const job of JOBS_ACOMPANHADOS)
+      expect(
+        jobs.some((j) => j.nome === job),
+        job,
+      ).toBe(true);
   });
 });

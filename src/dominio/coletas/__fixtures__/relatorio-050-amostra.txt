@@ -1,0 +1,115 @@
+
+CALF TRANSPORTE DE CARGAS LTDA                                                                                                                                                      PAG:   1
+ssw0157                                                                           RELACAO DAS COLETAS                                                                           03/11/26 12:01
+PERIODO DE CADASTRAMENTO: 01/10/26 A 31/10/26
+PERIODO DE COLETA:        01/10/26 A 31/10/26
+==============================================================================================================================================================================================
+ARA 056168 - NORMAL                                                       DATA LIMITE INICIAL: 16/10
+    REME: 11111111000191 EMPRESA TESTE 1 LTDA           END: RUA TESTE, 100                BAIRRO TESTE        26413030 JAPERI                    (21)0000-0000   SETOR: 264           
+    DEST: 11111111000192 EMPRESA TESTE 2 LTDA           END: RUA TESTE, 100                BAIRRO TESTE         7140115 GUARULHOS-SP              (21)0000-0000   
+    DATA/HORA LIMITE: 16/10 23:59               SOLICITANTE: PAJUCARA               MOTORISTA: MOTORISTA TESTE                                           SITUACAO ATUAL: 16/10 09:40 COLETADA       
+    VAL MERC: 2.000,00           QTDE VOL:     090 PESO(KG): 450,000                  VEICULO: ABC1D23                                                       CADASTRADA: 15/10 10:50 operado 
+    MERC: 001 - DIVERSOS                         TIPO FRETE: CIF                     NFISCAIS:                                                                COMANDADA: 16/10 03:24 opera   
+    OBS1:                                                                                                                                                      COLETADA:  16/10 09:40 operado 
+    OBS2:                                                                                                                                                     CANCELADA:                     
+    OBS3:                                                                       
+    SIT/INSTR: FRT ARA operado  16/10 09:41 COLETA REALIZADA PELO VEICULO ABC1D23
+               FRT ARA operado  16/10 07:56 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT ARA opera    16/10 07:47 ROMANEIO ARA 021749-2 gerado para coleta.
+               FRT ARA opera    16/10 03:24 COLETA COMANDADA PARA VEICULO ABC1D23, MOTORISTA FULANO DE TAL CPF 00000000000       
+               FRT ARA operado  15/10 17:08 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT ARA operador 15/10 16:56 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT ARA operado  15/10 16:55 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT ARA operado  15/10 10:52 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT ARA operado  15/10 10:51 RASTREADOR 1 - RASTREADOR 2
+               FRT ARA operado  15/10 10:51 COLETA COMANDADA PARA VEICULO ABC1D23, MOTORISTA FULANO DE TAL CPF 00000000000       
+               FRT ARA operado  15/10 10:50 Remet: EMPRESA TESTE  ,    90 vol,    450 Kg, destino: SP-GUARULHOS , horario limite: 16/10/26 23:59h.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CAP 012532 - NORMAL                                                       DATA LIMITE INICIAL: 28/10
+    REME: 11111111000193 EMPRESA TESTE 3 LTDA           END: RUA TESTE, 100                BAIRRO TESTE        24435420 SAO GONCALO               (21)0000-0000   SETOR: 244           
+    DEST: 11111111000194 EMPRESA TESTE 4 LTDA           END: RUA TESTE, 100                BAIRRO TESTE        28615010 NOVA FRIBURGO-RJ          (21)0000-0000   
+    DATA/HORA LIMITE: 29/10 23:59               SOLICITANTE: RODORIO                MOTORISTA: MOTORISTA TESTE                                           SITUACAO ATUAL: 29/10 16:53 COLETADA       
+    VAL MERC: 2.376,00           QTDE VOL:     001 PESO(KG): 2,000                    VEICULO: ABC1D23                                                       CADASTRADA: 26/10 15:50 operad  
+    MERC: 001 - DIVERSOS                         TIPO FRETE: CIF                     NFISCAIS: 1234                                                           COMANDADA: 28/10 22:51 operad  
+    OBS1:                                                                                                                                                      COLETADA:  29/10 16:53 operad  
+    OBS2:                                                                                                                                                     CANCELADA:                     
+    OBS3:                                                                       
+    SIT/INSTR: FRT CAP operad   30/10 17:23 CTRC GERADO: CAS 150354-5
+               FRT CAP operad   29/10 19:59 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT CAP operad   29/10 16:54 COLETA REALIZADA PELO VEICULO ABC1D23
+               FRT CAP operad   29/10 09:24 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT CAP operad   29/10 09:24 DATA/HORA LIMITE ALTERADO DE 28/10/26 23:59H PARA 29/10/26 23:59H.
+               FRT CAP operad   28/10 22:51 COLETA COMANDADA PARA VEICULO ABC1D23, MOTORISTA FULANO DE TAL CPF 00000000000       
+               FRT CAP operador 28/10 21:15 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT CAP operad   28/10 09:42 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT CAP operad   28/10 09:42 DATA/HORA LIMITE ALTERADO DE 27/10/26 23:59H PARA 28/10/26 23:59H.
+               FRT CAP operad   27/10 23:09 COLETA COMANDADA PARA VEICULO ABC1D23, MOTORISTA FULANO DE TAL CPF 00000000000       
+               FRT CAP operador 27/10 20:50 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT CAP operad   27/10 08:35 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT CAP operad   27/10 08:35 DATA/HORA LIMITE ALTERADO DE 28/10/26 23:59H PARA 27/10/26 23:59H.
+               FRT CAP operad   26/10 23:36 COLETA COMANDADA PARA VEICULO ABC1D23, MOTORISTA FULANO DE TAL CPF 00000000000       
+               FRT CAP operad   26/10 17:35 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT CAP operad   26/10 15:50 Remet: EMPRESA TESTE  ,     1 vol,      2 Kg, destino: RJ-NOVA FRIBURGO , horario limite: 28/10/26 23:59h.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+CALF TRANSPORTE DE CARGAS LTDA                                                                                                                                                      PAG:   2
+ssw0157                                                                           RELACAO DAS COLETAS                                                                           03/11/26 12:01
+PERIODO DE CADASTRAMENTO: 01/10/26 A 31/10/26
+PERIODO DE COLETA:        01/10/26 A 31/10/26
+==============================================================================================================================================================================================
+ARA 056205 - NORMAL                                                       DATA LIMITE INICIAL: 21/10
+    REME: 11111111000195 EMPRESA TESTE 5 LTDA           END: RUA TESTE, 100                BAIRRO TESTE       I24858048 ITABORAI                  (21)0000-0000   SETOR: ITA ITABORAI  
+    DEST: 11111111000196 EMPRESA TESTE 6 LTDA           END: RUA TESTE, 100                BAIRRO TESTE        25585021 SAO JOAO DE MERIT-RJ      (21)0000-0000   
+    DATA/HORA LIMITE: 21/10 23:59               SOLICITANTE: TJB                    MOTORISTA:                                                           SITUACAO ATUAL: 22/10 11:05 CANCELADA      
+    VAL MERC: 3.000,00           QTDE VOL:     001 PESO(KG): 100,000                  VEICULO:                                                               CADASTRADA: 16/10 16:31 operado 
+    MERC: 001 - DIVERSOS                         TIPO FRETE: CIF                     NFISCAIS: 1234                                                           COMANDADA: 21/10 03:50 opera   
+    OBS1:                                                                                                                                                      COLETADA:  21/10 15:02 operado 
+    OBS2:                                                                                                                                                     CANCELADA: 22/10 11:05 operado 
+    OBS3:                                                                       
+    SIT/INSTR: FRT ARA operado  22/10 11:05 COLETA CANCELADA
+               FRT ARA operado  21/10 15:04 CLIENTE INFORMA NAO TER COLETA
+               FRT ARA operado  21/10 15:03 DESCONSIDERAR SAC
+               FRT ARA operado  21/10 15:03 COLETA REALIZADA PELO VEICULO ABC1D23
+               FRT ARA operado  21/10 15:02 CLIENTE INFORMA NAO TER COLETA
+               FRT ARA operado  21/10 08:11 ROMANEIO ARA 021763-8 gerado para coleta.
+               FRT ARA opera    21/10 03:50 COLETA COMANDADA PARA VEICULO ABC1D23, MOTORISTA FULANO DE TAL CPF 00000000000       
+               FRT ARA operador 20/10 20:31 COLETA PREJUDICADA PELO HORARIO
+               FRT ARA opera    19/10 21:59 COLETA COMANDADA PARA VEICULO ABC1D23, MOTORISTA FULANO DE TAL CPF 00000000000       
+               FRT ARA operad   16/10 17:29 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT ARA operado  16/10 16:31 Remet: EMPRESA TESTE  ,     1 vol,    100 Kg, destino: RJ-SAO JOAO DE MER , horario limite: 21/10/26 23:59h.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ARA 056192 - REVERS                                                       DATA LIMITE INICIAL:      
+    REME: 11111111000197 EMPRESA TESTE 7 LTDA           END: RUA TESTE, 100                BAIRRO TESTE        28982050 ARARUAMA                  (21)0000-0000   SETOR: ARA ARARUAMA  
+    DEST: 11111111000198 EMPRESA TESTE 8 LTDA           END: RUA TESTE, 100                BAIRRO TESTE         7432575 ITAQUAQUECETUBA-SP        (21)0000-0000   
+    DATA/HORA LIMITE: 19/10 17:00               SOLICITANTE: X                      MOTORISTA: MOTORISTA TESTE                                           SITUACAO ATUAL: 28/10 22:24 COLETADA       
+    VAL MERC: 1.708,27           QTDE VOL:     001 PESO(KG): 29,900                   VEICULO: ABC1D23                                                       CADASTRADA: 16/10 11:04 operado 
+    MERC: 001 - DIVERSOS                         TIPO FRETE: FOB                     NFISCAIS: 1234                                                           COMANDADA: 28/10 05:43 operado 
+    OBS1:                                                                                                                                                      COLETADA:  28/10 22:24 operador
+    OBS2:                                                                                                                                                     CANCELADA:                     
+    OBS3:                                                                       
+    SIT/INSTR: FRT ARA operador 28/10 22:24 COLETA REALIZADA PELO VEICULO ABC1D23, MOTORISTA FULANO DE TAL CPF 00000000000       
+               FRT ARA oper     28/10 15:55 COLETA REALIZADA PELO VEICULO ABC1D23
+               FRT ARA operado  28/10 07:48 ROMANEIO ARA 021813-8 gerado para coleta.
+               FRT ARA operado  28/10 05:43 COLETA COMANDADA PARA VEICULO ABC1D23, MOTORISTA FULANO DE TAL CPF 00000000000       
+               FRT ARA operado  27/10 15:46 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT ARA operado  27/10 08:46 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT ARA opera    19/10 21:58 COLETA COMANDADA PARA VEICULO ABC1D23, MOTORISTA FULANO DE TAL CPF 00000000000       
+               FRT ARA operad   16/10 17:16 COMPROVANTE DE COLETA/ORDEM DE COLETA IMPRESSO.
+               FRT ARA operado  16/10 11:10 COLETA CADASTRADA A PARTIR DA VAJ FRR 428
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+==============================================================================================================================================================================================
+
+                                                                                R E S U M O
+                  ----------------------------   ------------------------   ----------------------   ---------------------------------------   ---------------
+                                                          TOTAL                    ORIGEM                        SITUACAO ATUAL                   COLETADAS  
+                                                 ------------------------   ----------------------   ---------------------------------------   ---------------
+                  UNIDADE/SETOR                       TON    QUANT      %      WEB   AGEND     SAC    PRECAD   CADAS   COMAN   COLET  CANCEL     PRAZO  ATRASA
+                  ----------------------------   ------------------------   ----------------------   ---------------------------------------   ---------------
+                  TOTAL                               1,0       4   100,0        0       0       4         0       0       0       3       1         2       1

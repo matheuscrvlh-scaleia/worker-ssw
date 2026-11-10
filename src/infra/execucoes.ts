@@ -4,6 +4,8 @@
  */
 import { randomUUID } from "node:crypto";
 
+import { type JobType } from "bullmq";
+
 import {
   type EstadoDaExecucao,
   type JobPedivel,
@@ -31,7 +33,7 @@ export interface FilaConsultavel {
     opcoes: { jobId: string; deduplication?: { id: string } },
   ): Promise<{ id?: string | undefined }>;
   getJob(id: string): Promise<JobDaFila | undefined>;
-  getJobs(tipos: string[], inicio: number, fim: number): Promise<JobDaFila[]>;
+  getJobs(tipos: JobType[], inicio: number, fim: number): Promise<JobDaFila[]>;
   getJobScheduler(id: string): Promise<{ next?: number | undefined } | undefined>;
 }
 
@@ -65,7 +67,7 @@ export interface DependenciasDasExecucoes {
 const INTERVALO_DA_ESPERA_MS = 500;
 /** Quantos jobs recentes olhar para achar os da empresa (o histórico é de todas). */
 const JANELA_DO_HISTORICO = 50;
-const NA_FILA = ["waiting", "prioritized", "delayed", "waiting-children"];
+const NA_FILA: JobType[] = ["waiting", "prioritized", "delayed", "waiting-children"];
 
 export function estadoDoBullmq(estado: string): EstadoDaExecucao {
   if (estado === "completed") return "concluida";

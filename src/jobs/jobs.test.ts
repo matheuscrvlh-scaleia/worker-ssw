@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { ErroDeNegocio } from "@erp/dominio/erros";
 import { ehJobDeIngestao, JOBS_DE_INGESTAO } from "@erp/shared/ingestao";
 import { z } from "@erp/shared/zod";
 import { UnrecoverableError } from "bullmq";
@@ -14,7 +15,7 @@ import {
 } from "./agendamentos/agendamentos";
 import { criarJobsDaIngestao } from "./ingestao/jobs";
 import { limparIngestaoSsw } from "./manutencao/job";
-import { criarProcessador } from "./processador";
+import { criarProcessador, MENSAGEM_DE_FALHA } from "./processador";
 import { definirJob } from "./registro";
 
 const log = pino({ level: "silent" });
@@ -66,6 +67,30 @@ describe("processador", () => {
     });
     await processar({ name: "conferir-empresa", data: { empresaId: EMPRESA } });
     expect(banco.contextos).toEqual([{ empresaId: EMPRESA, usuarioId: null, plataforma: false }]);
+  });
+
+  it("falha sai com mensagem para o operador; o detalhe interno fica só no log", async () => {
+    const falhar = (erro: Error) =>
+      definirJob({
+        nome: "falha",
+        fila: "manutencao",
+        escopo: "empresa",
+        dados: z.object({ empresaId: z.uuid() }),
+        agendamento: null,
+        processar: () => Promise.reject(erro),
+      });
+    const rodar = (erro: Error) =>
+      criarProcessador({
+        jobs: [falhar(erro)],
+        executar: new BancoFalso().executar,
+        log,
+        agora: () => new Date(),
+      })({ name: "falha", data: { empresaId: EMPRESA } });
+    await expect(rodar(new Error("Failed query: insert ... params: dado"))).rejects.toThrow(
+      new Error(MENSAGEM_DE_FALHA),
+    );
+    const negocio = new ErroDeNegocio("CONFLITO", "Integração SFTP desligada.");
+    await expect(rodar(negocio)).rejects.toBe(negocio);
   });
 
   it("job desconhecido ou dado inválido não é repetido", async () => {

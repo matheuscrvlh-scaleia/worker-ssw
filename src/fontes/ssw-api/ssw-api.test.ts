@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { BancoFalso, EMPRESA } from "../../testes/banco-falso";
 import { type Cofre } from "../comum/integracao";
 import { gerarToken, gerarTokenComNovasTentativas } from "./cliente";
-import { criarCofreDeToken, type RedisDoCofre } from "./cofre-de-token";
+import { criarCofreDeToken, geradoEmDoToken, type RedisDoCofre } from "./cofre-de-token";
 import { criarJobTokenSsw } from "./job";
 
 const log = pino({ level: "silent" });
@@ -155,6 +155,9 @@ describe("job verificar-token-ssw", () => {
     ]);
     const guardado = redis.dados.get(chaveDoTokenSsw(EMPRESA)) ?? "";
     expect(guardado).not.toContain("token-novo-123");
+    // A situação pedida pelo ERP lê só quando foi gerado, sem decifrar.
+    expect(await geradoEmDoToken(redis, EMPRESA)).toEqual(agora);
+    expect(await geradoEmDoToken(redis, "outra")).toBeNull();
     expect(banco.verificacoes).toMatchObject([{ tipo: "ssw_api", ok: true }]);
   });
 

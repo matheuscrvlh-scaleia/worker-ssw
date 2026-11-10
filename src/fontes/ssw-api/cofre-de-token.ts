@@ -70,3 +70,14 @@ function jsonOuNulo(texto: string): unknown {
     return null;
   }
 }
+
+/** Quando o token guardado foi gerado, sem decifrá-lo (situação pedida pelo ERP). */
+export async function geradoEmDoToken(
+  redis: Pick<RedisDoCofre, "get">,
+  empresaId: string,
+): Promise<Date | null> {
+  const texto = await redis.get(chaveDoTokenSsw(empresaId));
+  if (texto === null) return null;
+  const lido = gravado.safeParse(jsonOuNulo(texto));
+  return lido.success ? new Date(lido.data.geradoEm) : null;
+}

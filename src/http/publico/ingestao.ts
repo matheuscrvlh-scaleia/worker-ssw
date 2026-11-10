@@ -20,6 +20,7 @@ import {
   sha256,
   type TipoIntegracao,
 } from "../../aplicacao/casos-de-uso";
+import { limitePorMinuto } from "../limite";
 import { type SegredoDaIngestao, type ServicosDaIngestao } from "./servicos";
 
 /** Arquivos em base64 (455 CSV chega dividido, mas a parte retroativa pode vir inteira). */
@@ -130,14 +131,13 @@ export const rotasPublicasDaIngestao: FastifyPluginCallbackZod<{
     return d.empresa.id;
   }
 
-  const limite = (max: number) => ({ rateLimit: { max, timeWindow: "1 minute" } });
-
   app.post(
     "/api/public/ftp-relatorio-import",
     {
       bodyLimit: LIMITE_COM_ARQUIVO,
-      config: limite(240),
-      onRequest: autenticar(false),
+      // Limite próprio na frente da autenticação (o global fica desligado nesta rota).
+      config: { rateLimit: false },
+      onRequest: [limitePorMinuto(app, "ftp-relatorio-import", 240), autenticar(false)],
       schema: {
         body: corpoComEmpresa.extend({
           nome: z.string().optional(),
@@ -193,8 +193,8 @@ export const rotasPublicasDaIngestao: FastifyPluginCallbackZod<{
     "/api/public/ssw-ciclo-aplicar",
     {
       bodyLimit: LIMITE_SEM_ARQUIVO,
-      config: limite(120),
-      onRequest: autenticar(true),
+      config: { rateLimit: false },
+      onRequest: [limitePorMinuto(app, "ssw-ciclo-aplicar", 120), autenticar(true)],
       schema: { body: corpoComEmpresa.optional() },
     },
     async (request, reply) => {
@@ -215,8 +215,8 @@ export const rotasPublicasDaIngestao: FastifyPluginCallbackZod<{
     "/api/public/xml-orfaos-retry",
     {
       bodyLimit: LIMITE_SEM_ARQUIVO,
-      config: limite(30),
-      onRequest: autenticar(true),
+      config: { rateLimit: false },
+      onRequest: [limitePorMinuto(app, "xml-orfaos-retry", 30), autenticar(true)],
       schema: {
         body: corpoComEmpresa
           .extend({ limite: z.number().int().min(1).max(1000).optional() })

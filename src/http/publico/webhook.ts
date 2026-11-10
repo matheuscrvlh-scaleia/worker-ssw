@@ -13,6 +13,7 @@ import {
 } from "../../fontes/webhook/recepcao";
 import { type RepositorioRecepcaoWebhook } from "../../fontes/webhook/repositorio-recepcao";
 import { type ContadorPorJanela } from "../../infra/contador";
+import { limitePorMinuto } from "../limite";
 
 export const CAMINHO_DO_WEBHOOK = "/api/public/ssw-ocorrencias";
 
@@ -134,15 +135,18 @@ export const rotasPublicasSsw: FastifyPluginCallback<OpcoesDoWebhookPublico> = (
   app.post(
     CAMINHO_DO_WEBHOOK,
     {
-      config: { rateLimit: { max: LIMITE_POR_MINUTO, timeWindow: "1 minute" } },
-      onRequest: async (request, reply) => {
-        const autenticacao = await autenticarWebhook(portas, cabecalhosDe(request));
-        if (autenticacao.tipo === "recusado") {
-          const { status, corpo } = autenticacao.resposta;
-          return reply.header("cache-control", "no-store").code(status).send(corpo);
-        }
-        autenticacoes.set(request, autenticacao);
-      },
+      config: { rateLimit: false },
+      onRequest: [
+        limitePorMinuto(app, "ssw-ocorrencias", LIMITE_POR_MINUTO),
+        async (request, reply) => {
+          const autenticacao = await autenticarWebhook(portas, cabecalhosDe(request));
+          if (autenticacao.tipo === "recusado") {
+            const { status, corpo } = autenticacao.resposta;
+            return reply.header("cache-control", "no-store").code(status).send(corpo);
+          }
+          autenticacoes.set(request, autenticacao);
+        },
+      ],
     },
     async (request, reply) => {
       const autenticacao = autenticacoes.get(request);

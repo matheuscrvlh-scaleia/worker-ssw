@@ -24,6 +24,7 @@ import {
 } from "../contrato-interno";
 import { type Execucoes } from "../infra/execucoes";
 import { type DefinicaoDeJob } from "../jobs/registro";
+import { limitePorMinuto } from "./limite";
 
 /** Chaves e números de evento por pedido de projeções: corpo maior que o padrão de 1 MiB. */
 const LIMITE_DO_CORPO = 4 * 1024 * 1024;
@@ -75,13 +76,15 @@ export const rotasInternas: FastifyPluginCallbackZod<OpcoesDoInterno> = (
 ) => {
   const porNome = new Map(jobs.map((j) => [j.nome, j]));
 
-  // Autentica antes de ler o corpo.
+  // Limite na frente da autenticação (conta também o token errado); depois autentica, antes de
+  // ler o corpo.
+  app.addHook("onRequest", limitePorMinuto(app, "interno", LIMITE_POR_MINUTO));
   app.addHook("onRequest", async (request: FastifyRequest, _reply: FastifyReply) => {
     if (tokens.length === 0) throw naoConfigurado();
     if (!tokenAceito(request.headers.authorization, tokens)) throw naoAutenticado();
   });
 
-  const config = { rateLimit: { max: LIMITE_POR_MINUTO, timeWindow: "1 minute" } };
+  const config = { rateLimit: false } as const;
 
   app.post(
     `${PREFIXO_INTERNO}/empresas/:empresaId/execucoes`,

@@ -1,0 +1,15 @@
+# Lista de permissão: entra só o que o build usa.
+*
+!package.json
+!bun.lock
+!bunfig.toml
+!tsconfig.json
+!build.mjs
+!src/
+
+# Dentro do que entrou, nunca: testes, saídas de build, segredos.
+**/*.test.ts
+**/__fixtures__
+**/.env
+**/.env.*
+**/*.log

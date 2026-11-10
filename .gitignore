@@ -5,3 +5,7 @@ coverage/
 .env.*
 !.env.example
 *.log
+
+# CA do Supabase (baixada no deploy; docs/deploy.md)
+certs/*
+!certs/.gitkeep

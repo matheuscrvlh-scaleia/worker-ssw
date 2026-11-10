@@ -1,7 +1,7 @@
 /**
  * HTTP interno (ERP → worker-ssw), só na rede interna do Docker. Contrato em
- * `../contrato-interno.ts` (ADR 0012 do ERP). A auditoria de quem pediu é do ERP, gravada antes de
- * chamar aqui.
+ * `../contrato-interno.ts` (ADR 0012 do ERP): pedidos de job e as operações manuais da tela
+ * Admin › Importação SSW. A auditoria de quem pediu é do ERP, gravada antes de chamar aqui.
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 
@@ -10,17 +10,32 @@ import { idDeExecucao } from "@erp/shared/ingestao";
 import { type FastifyReply, type FastifyRequest } from "fastify";
 import { type FastifyPluginCallbackZod } from "fastify-type-provider-zod";
 
+import { type OperacoesManuais } from "../aplicacao/casos-de-uso";
 import {
+  cicloDescartado,
+  cicloRetomado,
   consultaDaExecucao,
   DADOS_DOS_JOBS,
   execucaoCriada,
   type JobPedivel,
+  LIMITE_DO_ARQUIVO_EM_BASE64,
+  ok,
   parametrosDaEmpresa,
   parametrosDaExecucao,
+  parametrosDoCiclo,
+  pedidoDeAplicacao,
+  pedidoDeDescarte,
   pedidoDeExecucao,
+  pedidoDeFtpAtivo,
+  pedidoDeRelatorio,
+  pedidoDeXml,
   PREFIXO_INTERNO,
+  relatorioImportado,
+  resultadoDaAplicacao,
+  resultadoDoXml,
   situacaoDaEmpresa,
   situacaoDaExecucao,
+  situacaoDoFtp,
 } from "../contrato-interno";
 import { type Execucoes } from "../infra/execucoes";
 import { type DefinicaoDeJob } from "../jobs/registro";
@@ -28,6 +43,8 @@ import { limitePorMinuto } from "./limite";
 
 /** Chaves e números de evento por pedido de projeções: corpo maior que o padrão de 1 MiB. */
 const LIMITE_DO_CORPO = 4 * 1024 * 1024;
+/** Relatório ou XML/zip enviado à mão (até 64 MB decodificado), só nessas duas rotas. */
+const LIMITE_DO_CORPO_COM_ARQUIVO = LIMITE_DO_ARQUIVO_EM_BASE64 + 64 * 1024;
 /** O ERP consulta com espera (`aguardarMs`): limite folgado, por IP (o do contêiner da API). */
 const LIMITE_POR_MINUTO = 1200;
 
@@ -67,11 +84,13 @@ export interface OpcoesDoInterno {
   execucoes: Execucoes;
   /** Definições dos jobs registrados (o zod de cada um confere os dados de novo). */
   jobs: readonly DefinicaoDeJob[];
+  /** Operações manuais da tela Admin › Importação SSW. */
+  manuais: OperacoesManuais;
 }
 
 export const rotasInternas: FastifyPluginCallbackZod<OpcoesDoInterno> = (
   app,
-  { tokens, execucoes, jobs },
+  { tokens, execucoes, jobs, manuais },
   pronto,
 ) => {
   const porNome = new Map(jobs.map((j) => [j.nome, j]));
@@ -150,6 +169,94 @@ export const rotasInternas: FastifyPluginCallbackZod<OpcoesDoInterno> = (
       schema: { params: parametrosDaEmpresa, response: { 200: situacaoDaEmpresa } },
     },
     (request) => execucoes.situacao(request.params.empresaId),
+  );
+
+  // --- Operações manuais (Admin › Importação SSW) ---------------------------------------------
+  const daEmpresa = `${PREFIXO_INTERNO}/empresas/:empresaId`;
+
+  app.post(
+    `${daEmpresa}/ciclos/:chave/retomar`,
+    { config, schema: { params: parametrosDoCiclo, response: { 200: cicloRetomado } } },
+    (request) => manuais.retomarCiclo(request.params.empresaId, request.params.chave),
+  );
+
+  app.post(
+    `${daEmpresa}/ciclos/:chave/descartar`,
+    {
+      config,
+      schema: {
+        params: parametrosDoCiclo,
+        // Sem corpo (o motivo é opcional) chega como null.
+        body: pedidoDeDescarte.nullish(),
+        response: { 200: cicloDescartado },
+      },
+    },
+    (request) =>
+      manuais.descartarCiclo(request.params.empresaId, request.params.chave, request.body?.motivo),
+  );
+
+  app.post(
+    `${daEmpresa}/relatorios`,
+    {
+      bodyLimit: LIMITE_DO_CORPO_COM_ARQUIVO,
+      config,
+      schema: {
+        params: parametrosDaEmpresa,
+        body: pedidoDeRelatorio,
+        response: { 200: relatorioImportado },
+      },
+    },
+    (request) => manuais.importarRelatorio(request.params.empresaId, request.body),
+  );
+
+  app.post(
+    `${daEmpresa}/aplicacoes`,
+    {
+      config,
+      schema: {
+        params: parametrosDaEmpresa,
+        body: pedidoDeAplicacao,
+        response: { 200: resultadoDaAplicacao },
+      },
+    },
+    (request) => manuais.aplicar(request.params.empresaId, request.body),
+  );
+
+  app.get(
+    `${daEmpresa}/ftp`,
+    { config, schema: { params: parametrosDaEmpresa, response: { 200: situacaoDoFtp } } },
+    (request) => manuais.lerFtp(request.params.empresaId),
+  );
+
+  app.put(
+    `${daEmpresa}/ftp/ativo`,
+    {
+      config,
+      schema: { params: parametrosDaEmpresa, body: pedidoDeFtpAtivo, response: { 200: ok } },
+    },
+    async (request) => {
+      await manuais.ativarFtp(request.params.empresaId, request.body.ativo);
+      return { ok: true as const };
+    },
+  );
+
+  app.post(
+    `${daEmpresa}/ftp/liberar-trava`,
+    { config, schema: { params: parametrosDaEmpresa, response: { 200: ok } } },
+    async (request) => {
+      await manuais.liberarTravaDoFtp(request.params.empresaId);
+      return { ok: true as const };
+    },
+  );
+
+  app.post(
+    `${daEmpresa}/xml`,
+    {
+      bodyLimit: LIMITE_DO_CORPO_COM_ARQUIVO,
+      config,
+      schema: { params: parametrosDaEmpresa, body: pedidoDeXml, response: { 200: resultadoDoXml } },
+    },
+    (request) => manuais.importarXml(request.params.empresaId, request.body),
   );
 
   pronto();

@@ -15,6 +15,7 @@ import { sql } from "drizzle-orm";
 import { Redis } from "ioredis";
 import { pino } from "pino";
 
+import { criarOperacoesManuais, type Transacional } from "./aplicacao/casos-de-uso";
 import { type ColunaDoBanco, conferirSchema } from "./banco/contrato-de-schema";
 import { lerAlvo, reconstruirProjecoes, USO_DA_RECONSTRUCAO } from "./cli/reconstruir-projecoes";
 import { carregarAmbiente } from "./config/ambiente";
@@ -33,6 +34,7 @@ import {
   criarClienteSftp,
   criarFilaDeAplicacao,
   criarFilas,
+  criarProgressos,
   criarRepositorioCteNucleo,
   criarRepositorioDeRetencao,
   criarRepositorioGravacao050,
@@ -134,6 +136,25 @@ const redis = new Redis(ambiente.REDIS_URL, { maxRetriesPerRequest: 1, connectTi
 const filas = criarFilas(redis);
 const cofre = criarCofre(chavesDeSegredo);
 
+const servicosDaIngestao = {
+  fila: criarFilaDeAplicacao(redisDosWorkers),
+  travas: criarTravas(redisDosWorkers),
+  progressos: criarProgressos(redisDosWorkers),
+  enfileirador: filas,
+  sftp: criarClienteSftp(),
+  cofre,
+  sftpDoAmbiente: ambiente,
+  esperar: (ms: number) => esperar(ms),
+};
+
+/** Transação no contexto (RLS) da empresa, com o repositório da ingestão. */
+const naEmpresa =
+  (empresaId: string): Transacional =>
+  (fn) =>
+    comContexto(conexao.banco, daEmpresa(empresaId), (tx) =>
+      fn(criarRepositorioIngestao(tx, empresaId)),
+    );
+
 const jobs = criarJobs({
   buscar: fetch,
   cofre,
@@ -142,15 +163,7 @@ const jobs = criarJobs({
     enfileirar: (job, dados, { deduplicar }) =>
       filas.enfileirar(filaDoJob(job), job, dados, deduplicar ? { deduplicacao: deduplicar } : {}),
   },
-  ingestao: {
-    fila: criarFilaDeAplicacao(redisDosWorkers),
-    travas: criarTravas(redisDosWorkers),
-    enfileirador: filas,
-    sftp: criarClienteSftp(),
-    cofre,
-    sftpDoAmbiente: ambiente,
-    esperar: (ms) => esperar(ms),
-  },
+  ingestao: servicosDaIngestao,
   esperar: (ms) => esperar(ms),
 });
 
@@ -170,10 +183,7 @@ const { app, metricas } = await construirApp({
   redis,
   agora: () => new Date(),
   ingestao: {
-    executarNaEmpresa: (empresaId) => (fn) =>
-      comContexto(conexao.banco, daEmpresa(empresaId), (tx) =>
-        fn(criarRepositorioIngestao(tx, empresaId)),
-      ),
+    executarNaEmpresa: naEmpresa,
     empresasParaIngestao: () =>
       comContexto(conexao.banco, PLATAFORMA, (tx) =>
         criarRepositorioDaIngestaoPublica(tx).empresasParaIngestao(),
@@ -217,6 +227,17 @@ const { app, metricas } = await construirApp({
       agendador: filas.fila("agendador"),
       tokenSswGeradoEm: (empresaId) => geradoEmDoToken(redis, empresaId),
       esperar: (ms) => esperar(ms),
+    }),
+    manuais: criarOperacoesManuais({
+      deps: (empresaId) => ({
+        empresaId,
+        executar: naEmpresa(empresaId),
+        fila: servicosDaIngestao.fila,
+        travas: servicosDaIngestao.travas,
+        enfileirador: filas,
+        agora: () => new Date(),
+      }),
+      progressos: servicosDaIngestao.progressos,
     }),
   },
   prontidao: {

@@ -14,6 +14,7 @@ import {
   type FilaDeAplicacao,
   LIMITE_PADRAO_DOS_ORFAOS,
   limparIngestao,
+  type Progressos,
   reprocessarOrfaos,
   rodarCiclos,
   sincronizarFtp,
@@ -30,6 +31,7 @@ import { slaPelosArquivos } from "../sla-arquivos/job";
 export interface ServicosDaIngestao {
   fila: FilaDeAplicacao;
   travas: Travas;
+  progressos: Progressos;
   /** Jobs de outros domínios (projeções do Romaneio, 050 de Coletas). */
   enfileirador: Enfileirador;
   sftp: ClienteSftp;
@@ -62,6 +64,7 @@ function dependencias(
         return montarConfiguracaoSftp(integracao, senha, s.sftpDoAmbiente);
       },
     },
+    progressos: s.progressos,
     relogio: { agora, esperar: s.esperar },
   };
 }

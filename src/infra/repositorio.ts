@@ -154,6 +154,23 @@ export function criarRepositorioIngestao(tx: Transacao, empresaId: string): Repo
       return configuracoesVigentes(linhas);
     },
 
+    async gravarConfiguracao(chave, valor) {
+      await tx
+        .insert(configuracoes)
+        .values({
+          empresaId,
+          chave,
+          valor,
+          descricao: "",
+          grupo: "ingestao",
+          atualizadoPor: null,
+        })
+        .onConflictDoUpdate({
+          target: [configuracoes.empresaId, configuracoes.chave],
+          set: { valor, atualizadoEm: sql`now()`, atualizadoPor: null },
+        });
+    },
+
     async arquivoPorNome(nome) {
       const [a] = await tx
         .select()
@@ -249,6 +266,17 @@ export function criarRepositorioIngestao(tx: Transacao, empresaId: string): Repo
         .from(ingestaoArquivos)
         .where(and(daEmpresa(ingestaoArquivos), eq(ingestaoArquivos.cicloChave, cicloChave)));
       return linhas.map(comoArquivo);
+    },
+
+    async marcarArquivosDescartados(cicloChave) {
+      await tx
+        .update(ingestaoArquivos)
+        .set({
+          status: "descartado",
+          mensagem: sql`coalesce(${ingestaoArquivos.mensagem}, '') || ' [ciclo descartado]'`,
+          atualizadoEm: sql`now()`,
+        })
+        .where(and(daEmpresa(ingestaoArquivos), eq(ingestaoArquivos.cicloChave, cicloChave)));
     },
 
     async relatoriosEsperados() {
@@ -412,6 +440,24 @@ export function criarRepositorioIngestao(tx: Transacao, empresaId: string): Repo
       return linhas.flatMap((l) =>
         l.sigla && l.numero ? [{ sigla: l.sigla, numero: l.numero }] : [],
       );
+    },
+
+    async apagarLotes(loteIds) {
+      if (loteIds.length === 0) return { linhas: 0, erros: 0, apagadas: [] };
+      const linhas = await tx
+        .delete(ingestaoLinhas)
+        .where(and(daEmpresa(ingestaoLinhas), inArray(ingestaoLinhas.loteId, [...loteIds])))
+        .returning({
+          relatorio: ingestaoLinhas.relatorio,
+          sigla: ingestaoLinhas.sigla,
+          numero: ingestaoLinhas.numero,
+          dados: ingestaoLinhas.dados,
+        });
+      const erros = await tx
+        .delete(ingestaoErros)
+        .where(and(daEmpresa(ingestaoErros), inArray(ingestaoErros.loteId, [...loteIds])))
+        .returning({ id: ingestaoErros.id });
+      return { linhas: linhas.length, erros: erros.length, apagadas: linhas };
     },
 
     async cadastrosDoNucleo() {
@@ -617,6 +663,46 @@ export function criarRepositorioIngestao(tx: Transacao, empresaId: string): Repo
         .where(and(daEmpresa(ingestaoAplicacoes), eq(ingestaoAplicacoes.id, id)));
     },
 
+    async arquivoXmlPorSha(sha256) {
+      const [a] = await tx
+        .select()
+        .from(xmlCteArquivos)
+        .where(and(daEmpresa(xmlCteArquivos), eq(xmlCteArquivos.sha256, sha256)));
+      return a ?? null;
+    },
+
+    async registrarArquivoXml(a) {
+      const [r] = await tx
+        .insert(xmlCteArquivos)
+        .values({ empresaId, ...a })
+        .onConflictDoUpdate({ target: [xmlCteArquivos.empresaId, xmlCteArquivos.sha256], set: a })
+        .returning({ id: xmlCteArquivos.id });
+      if (!r) throw new Error("Falha ao registrar o arquivo XML.");
+      return r.id;
+    },
+
+    async itemXmlJaAplicado(sha256Xml) {
+      const [i] = await tx
+        .select({ id: xmlCteItens.id })
+        .from(xmlCteItens)
+        .where(
+          and(
+            daEmpresa(xmlCteItens),
+            eq(xmlCteItens.sha256Xml, sha256Xml),
+            eq(xmlCteItens.status, "sucesso"),
+          ),
+        )
+        .limit(1);
+      return i !== undefined;
+    },
+
+    async registrarItemXml(item) {
+      await tx
+        .insert(xmlCteItens)
+        .values({ empresaId, ...item })
+        .onConflictDoNothing();
+    },
+
     async promoverItemXml(sha256Xml) {
       await tx.execute(sql`
         update ${xmlCteItens} set status = 'sucesso'
@@ -674,6 +760,13 @@ export function criarRepositorioIngestao(tx: Transacao, empresaId: string): Repo
         .from(ctes)
         .where(and(daEmpresa(ctes), eq(ctes.id, id)));
       return c ? comoCte(c) : null;
+    },
+
+    async guardarOrfao(o, expiraEm) {
+      await tx
+        .insert(xmlCteOrfaos)
+        .values({ empresaId, ...o, expiraEm })
+        .onConflictDoNothing();
     },
 
     async expirarOrfaos(agora) {

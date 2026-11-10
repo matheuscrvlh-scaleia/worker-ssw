@@ -9,6 +9,8 @@ import {
   type CicloRegistrado,
   type Enfileirador,
   type FilaDeAplicacao,
+  type ProgressoDoFtp,
+  type Progressos,
   type RepositorioIngestao,
   type SincronizacaoFtp,
   type Transacional,
@@ -74,6 +76,7 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
       Promise.resolve({ id: EMPRESA, nome: "FR", dominioSsw: "FRT", cnpj: "99888777000166" }),
     configuracoes: (chaves) =>
       Promise.resolve(new Map([...s.configuracoes].filter(([k]) => chaves.includes(k)))),
+    gravarConfiguracao: (k, v) => Promise.resolve(void s.configuracoes.set(k, v)),
     arquivoPorNome: (nome) => Promise.resolve(s.arquivos.get(nome) ?? null),
     registrarArquivo: (a) => {
       const antes = s.arquivos.get(a.nomeArquivo);
@@ -140,6 +143,10 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
     },
     arquivosDoCiclo: (c) =>
       Promise.resolve([...s.arquivos.values()].filter((a) => a.cicloChave === c)),
+    marcarArquivosDescartados: (c) => {
+      for (const a of s.arquivos.values()) if (a.cicloChave === c) a.status = "descartado";
+      return Promise.resolve();
+    },
     relatoriosEsperados: () => Promise.resolve(s.esperados),
     gravarLinhas: (relatorio, loteId, arquivoId, linhas) => {
       let n = 0;
@@ -226,6 +233,11 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
       }
       return Promise.resolve([...vistas.values()]);
     },
+    apagarLotes: (lotes) => {
+      const apagadas = s.linhas.filter((l) => lotes.includes(l.loteId));
+      s.linhas = s.linhas.filter((l) => !lotes.includes(l.loteId));
+      return Promise.resolve({ linhas: apagadas.length, erros: 0, apagadas });
+    },
     cadastrosDoNucleo: () =>
       Promise.resolve({
         catalogo: CATALOGO_FR,
@@ -309,11 +321,16 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
       if (a) Object.assign(a, { status, erro });
       return Promise.resolve();
     },
+    arquivoXmlPorSha: naoUsado,
+    registrarArquivoXml: naoUsado,
+    itemXmlJaAplicado: naoUsado,
+    registrarItemXml: naoUsado,
     promoverItemXml: naoUsado,
     ctePorChaveCte: naoUsado,
     ctesPorNumeroCte: naoUsado,
     ctesPorChaveNfe: naoUsado,
     ctePorId: naoUsado,
+    guardarOrfao: naoUsado,
     expirarOrfaos: naoUsado,
     orfaosPendentes: naoUsado,
     marcarOrfao: naoUsado,
@@ -364,6 +381,31 @@ export function travasFalsas(): Travas & { ocupadas: Set<string> } {
     ocupadas,
     adquirir: (k) => Promise.resolve(ocupadas.has(k) ? null : (ocupadas.add(k), "token")),
     liberar: (k) => Promise.resolve(void ocupadas.delete(k)),
+    ativa: (k) => Promise.resolve(ocupadas.has(k)),
+    forcarLiberacao: (k) => Promise.resolve(void ocupadas.delete(k)),
+  };
+}
+
+/** Progresso do FTP na memória (no lugar do Redis), com o heartbeat de quem grava. */
+export function progressosFalsos(): Progressos {
+  const porEmpresa = new Map<string, ProgressoDoFtp>();
+  const vazio: ProgressoDoFtp = {
+    fase: "conectando",
+    totalArquivos: 0,
+    arquivoAtualIndice: 0,
+    arquivoAtualNome: null,
+    mensagem: null,
+    iniciadoEm: null,
+    heartbeatEm: null,
+    finalizadoEm: null,
+  };
+  return {
+    gravar: (e, p, agora) =>
+      Promise.resolve(
+        void porEmpresa.set(e, { ...(porEmpresa.get(e) ?? vazio), ...p, heartbeatEm: agora }),
+      ),
+    ler: (e) => Promise.resolve(porEmpresa.get(e) ?? null),
+    limpar: (e) => Promise.resolve(void porEmpresa.delete(e)),
   };
 }
 

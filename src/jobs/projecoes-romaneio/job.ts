@@ -26,11 +26,21 @@ export const recalcularProjecoesRomaneio = definirJob({
   dados: z.object({
     empresaId: z.uuid(),
     chaves: z.array(chave).min(1).max(JOB_PROJECOES_ROMANEIO.maxChaves),
+    descartadas: z
+      .array(
+        chave.extend({
+          relatorios: z.array(z.string()),
+          romaneios: z.array(z.string()),
+          dias: z.array(z.string()),
+        }),
+      )
+      .max(JOB_PROJECOES_ROMANEIO.maxChaves)
+      .optional(),
   }),
   agendamento: null,
-  async processar({ executar, log }, { chaves }) {
+  async processar({ executar, log }, { chaves, descartadas }) {
     const resumo = await executar(({ projecoesRomaneio }) =>
-      recalcularProjecoesDoRomaneio(projecoesRomaneio, chaves),
+      recalcularProjecoesDoRomaneio(projecoesRomaneio, chaves, descartadas),
     );
     log.info(resumo, "projeções do romaneio recalculadas");
   },

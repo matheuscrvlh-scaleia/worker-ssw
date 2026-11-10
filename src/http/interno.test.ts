@@ -1,7 +1,15 @@
+import { ErroDeNegocio } from "@erp/dominio/erros";
 import { type FastifyInstance } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { erroInterno, EXEMPLOS, type JobPedivel, JOBS_PEDIVEIS } from "../contrato-interno";
+import { type OperacoesManuais } from "../aplicacao/casos-de-uso";
+import {
+  erroInterno,
+  EXEMPLOS,
+  type JobPedivel,
+  JOBS_PEDIVEIS,
+  LIMITE_DO_ARQUIVO_EM_BASE64,
+} from "../contrato-interno";
 import { type Execucoes } from "../infra/execucoes";
 import { criarJobs, type ServicosDosJobs } from "../jobs/todos";
 import { appDeTeste } from "../testes/http";
@@ -37,14 +45,58 @@ class ExecucoesFalsas implements Execucoes {
   }
 }
 
+/** Guarda o que a rota repassou e devolve os exemplos do contrato. */
+class ManuaisFalsas implements OperacoesManuais {
+  chamadas: unknown[][] = [];
+  automaticaRodando = false;
+  private anotar<T>(nome: string, args: unknown[], r: T) {
+    this.chamadas.push([nome, ...args]);
+    return Promise.resolve(r);
+  }
+  retomarCiclo(...a: [string, string]) {
+    return this.anotar("retomar", a, EXEMPLOS.cicloRetomado);
+  }
+  descartarCiclo(...a: [string, string, string | undefined]) {
+    return this.anotar("descartar", a, EXEMPLOS.cicloDescartado);
+  }
+  importarRelatorio(empresaId: string, p: { conteudoBase64: string; aceitarDivergencia: boolean }) {
+    return this.anotar(
+      "relatorio",
+      [empresaId, p.conteudoBase64.length, p.aceitarDivergencia],
+      EXEMPLOS.relatorioImportado,
+    );
+  }
+  aplicar(...a: [string, unknown]) {
+    if (this.automaticaRodando) {
+      return Promise.reject(
+        new ErroDeNegocio("CONFLITO", "A aplicação automática está rodando agora."),
+      );
+    }
+    return this.anotar("aplicar", a, EXEMPLOS.resultadoDaAplicacao);
+  }
+  lerFtp(...a: [string]) {
+    return this.anotar("ftp", a, EXEMPLOS.ftp);
+  }
+  ativarFtp(...a: [string, boolean]) {
+    return this.anotar("ativar", a, undefined);
+  }
+  liberarTravaDoFtp(...a: [string]) {
+    return this.anotar("liberar", a, undefined);
+  }
+  importarXml(empresaId: string, p: { nomeArquivo: string }) {
+    return this.anotar("xml", [empresaId, p.nomeArquivo], EXEMPLOS.resultadoDoXml);
+  }
+}
+
 let app: FastifyInstance | undefined;
 afterEach(() => app?.close());
 
 async function montar(tokens: string[] = [TOKEN, ANTERIOR]) {
   const execucoes = new ExecucoesFalsas();
-  const novo = await appDeTeste({ interno: { tokens, execucoes, jobs } });
+  const manuais = new ManuaisFalsas();
+  const novo = await appDeTeste({ interno: { tokens, execucoes, jobs, manuais } });
   app = novo;
-  return { execucoes, app: novo };
+  return { execucoes, manuais, app: novo };
 }
 
 const pedir = (
@@ -191,6 +243,96 @@ describe("HTTP interno: execuções", () => {
     expect(idDeDeduplicacao("projecoes-romaneio-completa", EMPRESA, {})).toBe(
       `projecoes-romaneio-completa__${EMPRESA}`,
     );
+  });
+});
+
+describe("HTTP interno: operações manuais da Importação SSW", () => {
+  const BASE = `/interno/v1/empresas/${EMPRESA}`;
+  const headers = { authorization: `Bearer ${TOKEN}` };
+  const post = (url: string, payload?: Record<string, unknown>) =>
+    app?.inject({ method: "POST", url: `${BASE}${url}`, headers, ...(payload ? { payload } : {}) });
+
+  it("ciclo: retomar e descartar (com e sem motivo), no formato da tela", async () => {
+    const { manuais } = await montar();
+    expect((await post("/ciclos/c1/retomar"))?.json()).toEqual(EXEMPLOS.cicloRetomado);
+    expect((await post("/ciclos/c1/descartar", EXEMPLOS.descarte))?.json()).toEqual(
+      EXEMPLOS.cicloDescartado,
+    );
+    expect((await post("/ciclos/c2/descartar"))?.statusCode).toBe(200);
+    const curto = await post("/ciclos/c3/descartar", { motivo: "x" });
+    expect(erroInterno.parse(curto?.json()).erro.mensagem).toContain("motivo do descarte");
+    expect(manuais.chamadas).toEqual([
+      ["retomar", EMPRESA, "c1"],
+      ["descartar", EMPRESA, "c1", EXEMPLOS.descarte.motivo],
+      ["descartar", EMPRESA, "c2", undefined],
+    ]);
+  });
+
+  it("relatório e XML aceitam corpo acima de 1 MiB; acima de 64 MB, 422", async () => {
+    const { manuais } = await montar();
+    const grande = "A".repeat(2 * 1024 * 1024);
+    const r = await post("/relatorios", { ...EXEMPLOS.relatorio, conteudoBase64: grande });
+    expect(r?.json()).toEqual(EXEMPLOS.relatorioImportado);
+    const x = await post("/xml", { ...EXEMPLOS.xml, conteudoBase64: grande });
+    expect(x?.json()).toEqual(EXEMPLOS.resultadoDoXml);
+    const demais = await post("/xml", {
+      ...EXEMPLOS.xml,
+      conteudoBase64: "A".repeat(LIMITE_DO_ARQUIVO_EM_BASE64 + 1),
+    });
+    expect(demais?.statusCode).toBe(422);
+    expect(manuais.chamadas).toEqual([
+      ["relatorio", EMPRESA, grande.length, false],
+      ["xml", EMPRESA, EXEMPLOS.xml.nomeArquivo],
+    ]);
+  });
+
+  it("o corpo grande vale só para relatório e XML", async () => {
+    await montar();
+    const r = await post("/aplicacoes", {
+      ...EXEMPLOS.aplicacao,
+      sobra: "A".repeat(2 * 1024 * 1024),
+    });
+    expect(r?.statusCode).toBe(422);
+    expect(erroInterno.parse(r?.json()).erro.mensagem).toBe("Conteúdo grande demais.");
+  });
+
+  it("aplicar: resultado da tela; com a automática rodando, 409 em português", async () => {
+    const { manuais } = await montar();
+    expect((await post("/aplicacoes", { simular: true }))?.json()).toEqual(
+      EXEMPLOS.resultadoDaAplicacao,
+    );
+    expect(manuais.chamadas).toEqual([
+      ["aplicar", EMPRESA, { simular: true, limite: 4000, offset: 0 }],
+    ]);
+    manuais.automaticaRodando = true;
+    const conflito = await post("/aplicacoes", { simular: false });
+    expect(conflito?.statusCode).toBe(409);
+    expect(erroInterno.parse(conflito?.json()).erro.codigo).toBe("CONFLITO");
+  });
+
+  it("FTP: situação, pausa e liberar trava", async () => {
+    const { manuais, app } = await montar();
+    expect((await app.inject({ url: `${BASE}/ftp`, headers })).json()).toEqual(EXEMPLOS.ftp);
+    const pausa = await app.inject({
+      method: "PUT",
+      url: `${BASE}/ftp/ativo`,
+      headers,
+      payload: EXEMPLOS.ftpAtivo,
+    });
+    expect(pausa.json()).toEqual(EXEMPLOS.ok);
+    expect((await post("/ftp/liberar-trava"))?.json()).toEqual(EXEMPLOS.ok);
+    expect(manuais.chamadas).toEqual([
+      ["ftp", EMPRESA],
+      ["ativar", EMPRESA, false],
+      ["liberar", EMPRESA],
+    ]);
+  });
+
+  it("sem token não chega à operação", async () => {
+    const { manuais, app } = await montar();
+    const r = await app.inject({ method: "POST", url: `${BASE}/ftp/liberar-trava` });
+    expect(r.statusCode).toBe(401);
+    expect(manuais.chamadas).toEqual([]);
   });
 });
 

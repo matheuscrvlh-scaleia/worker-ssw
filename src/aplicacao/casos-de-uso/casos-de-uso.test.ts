@@ -9,8 +9,9 @@ import {
   filaFalsa,
   travasFalsas,
 } from "../../testes/falsos";
+import { r036 } from "../../testes/registros";
 import { aplicarBloco, prepararFila } from "./aplicar";
-import { aplicarCiclo, rodarCiclos } from "./ciclo";
+import { aplicarCiclo, descartarCiclo, rodarCiclos } from "./ciclo";
 import { decidirEmpresa } from "./empresa";
 import { arquivosEstaveis, escolherArquivos, sincronizarFtp } from "./ftp";
 import { sha256 } from "./linhas";
@@ -171,6 +172,51 @@ describe("ciclo automático", () => {
     expect((await aplicarCiclo(deps, c)).status).toBe("aplicado");
     expect(s.aplicacoes).toHaveLength(0);
   });
+
+  it("descartar apaga as linhas do ciclo e avisa as projeções; ciclo aplicado não descarta", async () => {
+    const { s, receber, deps, enfileirador } = montar();
+    await receber(arquivo930(linha930("1", "04/11/26", "10:00")));
+    const lote = s.linhas[0]?.loteId ?? "";
+    s.linhas.push({
+      ...(s.linhas[0] as (typeof s.linhas)[number]),
+      id: 99,
+      relatorio: "036",
+      hash: "h036",
+      sigla: "CAP",
+      numero: "123",
+      dados: r036({ ctrc: "CAP000123-4", romaneio: "R9", data_emissao: "2026-11-05" }),
+      loteId: lote,
+    });
+    await descartarCiclo(deps, "2026-11-05_1000", "teste");
+    expect(s.linhas).toHaveLength(0);
+    expect(s.ciclos.get("2026-11-05_1000")?.status).toBe("descartado");
+    // Só a linha do 036 alimenta as projeções; a do 930 não gera aviso.
+    expect(enfileirador.jobs).toEqual([
+      {
+        nome: "projecoes-romaneio",
+        dados: {
+          empresaId: deps.empresaId,
+          chaves: [{ sigla: "CAP", numero: "123" }],
+          descartadas: [
+            {
+              sigla: "CAP",
+              numero: "123",
+              relatorios: ["036"],
+              romaneios: ["R9"],
+              dias: ["2026-11-05"],
+            },
+          ],
+        },
+      },
+    ]);
+    s.ciclos.set("x", {
+      ...(s.ciclos.get("2026-11-05_1000") as NonNullable<ReturnType<typeof s.ciclos.get>>),
+      cicloChave: "x",
+      status: "aplicado",
+      aplicadoEm: s.agora,
+    });
+    await expect(descartarCiclo(deps, "x", "teste")).rejects.toThrow(/já foi aplicado/);
+  });
 });
 
 describe("FTP", () => {
@@ -226,6 +272,7 @@ describe("FTP", () => {
       apagarPasta: () => Promise.resolve(),
       encerrar: () => Promise.resolve(),
     };
+    const progresso: string[] = [];
     const ftp = {
       ...deps,
       sftp: { conectar: () => Promise.resolve(conexao) },
@@ -241,6 +288,14 @@ describe("FTP", () => {
             importadosPath: "/importados",
           }),
       },
+      progressos: {
+        gravar: (_e: string, p: { fase?: string }) => {
+          if (p.fase) progresso.push(p.fase);
+          return Promise.resolve();
+        },
+        ler: () => Promise.resolve(null),
+        limpar: () => Promise.resolve(),
+      },
       relogio: { agora: () => s.agora, esperar: () => Promise.resolve() },
     };
     s.configuracoes.set("ftp_sync_ativo", "false");
@@ -251,6 +306,7 @@ describe("FTP", () => {
     expect(r).toMatchObject({ status: "ok", mensagem: "1 movido(s), 0 com erro" });
     expect([...arquivos.keys()]).toEqual([`/importados/2026-11-05/${NOME}`]);
     expect(s.ctes).toHaveLength(1);
+    expect(progresso.at(-1)).toBe("concluido");
   });
 });
 

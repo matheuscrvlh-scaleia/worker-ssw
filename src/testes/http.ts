@@ -2,6 +2,7 @@
 import { type ContextoBanco } from "@erp/db";
 import { pino } from "pino";
 
+import { type OperacoesManuais } from "../aplicacao/casos-de-uso";
 import {
   type EmpresaDoWebhook,
   type EventoRecebido,
@@ -83,6 +84,18 @@ export const execucoesQueNaoDevemSerUsadas: Execucoes = {
   situacao: () => Promise.reject(new Error("não usado")),
 };
 
+const naoUsado = () => Promise.reject(new Error("não usado"));
+export const manuaisQueNaoDevemSerUsadas: OperacoesManuais = {
+  retomarCiclo: naoUsado,
+  descartarCiclo: naoUsado,
+  importarRelatorio: naoUsado,
+  aplicar: naoUsado,
+  lerFtp: naoUsado,
+  ativarFtp: naoUsado,
+  liberarTravaDoFtp: naoUsado,
+  importarXml: naoUsado,
+};
+
 export function dependenciasDeTeste(troca: Partial<DependenciasHttp> = {}): DependenciasHttp {
   const agora = () => new Date("2026-11-10T12:00:00Z");
   return {
@@ -102,7 +115,12 @@ export function dependenciasDeTeste(troca: Partial<DependenciasHttp> = {}): Depe
       chaves: null,
       falhas: criarContadorEmMemoria(60_000, () => agora().getTime()),
     },
-    interno: { tokens: [], execucoes: execucoesQueNaoDevemSerUsadas, jobs: [] },
+    interno: {
+      tokens: [],
+      execucoes: execucoesQueNaoDevemSerUsadas,
+      jobs: [],
+      manuais: manuaisQueNaoDevemSerUsadas,
+    },
     prontidao: { verificacoes: {} },
     ...troca,
   };

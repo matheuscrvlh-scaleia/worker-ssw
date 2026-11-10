@@ -5,6 +5,7 @@ export * from "./empresa";
 export * from "./ftp";
 export * from "./gravar-cte";
 export * from "./linhas";
+export * from "./manuais";
 export * from "./manutencao";
 export * from "./portas";
 export * from "./receber";

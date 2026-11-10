@@ -2,7 +2,7 @@
  * worker-ssw: um processo com o HTTP (rotas públicas, interno, saúde) e os consumidores do BullMQ.
  *
  *   node dist/main.js                                   sobe o serviço
- *   node dist/main.js reconstruir-projecoes --todas     comando da virada (e sai)
+ *   node dist/main.js reconstruir-projecoes --todas [--origem-url <conexão>]   virada (e sai)
  */
 import { setTimeout as esperar } from "node:timers/promises";
 
@@ -17,7 +17,8 @@ import { pino } from "pino";
 
 import { criarOperacoesManuais, type Transacional, travaDoCiclo } from "./aplicacao/casos-de-uso";
 import { type ColunaDoBanco, conferirSchema } from "./banco/contrato-de-schema";
-import { lerAlvo, reconstruirProjecoes, USO_DA_RECONSTRUCAO } from "./cli/reconstruir-projecoes";
+import { abrirOrigem } from "./cli/origem-public";
+import { lerPedido, reconstruirProjecoes } from "./cli/reconstruir-projecoes";
 import { carregarAmbiente } from "./config/ambiente";
 import { type JobAcompanhado, JOBS_ACOMPANHADOS } from "./contrato-interno";
 import { criarRepositorioBi2 } from "./fontes/bi2/repositorio";
@@ -117,15 +118,21 @@ const executar: ExecutorDoWorker = (contexto, fn) =>
   comContexto(conexao.banco, contexto, (tx) => fn(repositorios(tx, contexto)));
 
 if (process.argv[2] === "reconstruir-projecoes") {
-  const alvo = lerAlvo(process.argv.slice(3));
-  if (alvo === null) {
-    log.error(USO_DA_RECONSTRUCAO);
+  const pedido = lerPedido(process.argv.slice(3));
+  if ("erro" in pedido) {
+    log.error(pedido.erro);
     await conexao.encerrar();
     process.exit(2);
   }
-  const resumos = await reconstruirProjecoes(executar, log, alvo);
-  log.info({ empresas: resumos.length }, "reconstrução das projeções concluída");
-  await conexao.encerrar();
+  // A URL da origem tem senha: nunca vai para o log.
+  const origem = pedido.origemUrl === null ? null : await abrirOrigem(pedido.origemUrl);
+  try {
+    const resumos = await reconstruirProjecoes(executar, log, pedido.alvo, origem);
+    log.info({ empresas: resumos.length }, "reconstrução das projeções concluída");
+  } finally {
+    await origem?.encerrar();
+    await conexao.encerrar();
+  }
   process.exit(0);
 }
 

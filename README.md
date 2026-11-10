@@ -21,7 +21,9 @@ ERP. Saiu do monorepo `erp-ssw` pela [ADR 0012 do ERP](docs/adr/0001-origem.md).
 - **Saúde**: `/saude/vivo`, `/saude/pronto` (banco, Redis e consumidores) e `/metrics` (Bearer
   `METRICAS_TOKEN`). `/interno/*` e `/metrics` respondem 404 a quem vem pela borda
   (`X-Forwarded-For`).
-- **Comando** `reconstruir-projecoes --empresa <uuid> | --todas` para a virada.
+- **Comando** `reconstruir-projecoes --empresa <uuid> | --todas`, com `--origem-url <conexão>`
+  (e `--confirmar-producao` se for produção) na virada: lê a staging inteira do `public` do sistema
+  atual, só leitura, e grava no `erp` (`docs/deploy.md`).
 
 ## O que não faz
 
@@ -77,11 +79,11 @@ testados em `EXEMPLOS`. Autenticação: `Authorization: Bearer <token>`, compara
 constante contra cada valor de `INTERNO_TOKENS`. Sem token configurado: 503; token errado: 401.
 Erros no formato `{ "erro": { "codigo", "mensagem" } }`, em português, para o operador.
 
-| Método | Caminho                                     | Entrada                        | Saída                                                                               |
-| ------ | ------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------- |
-| POST   | `/interno/v1/empresas/:empresaId/execucoes` | `{ job, dados?, deduplicar? }` | `202 { execucaoId }`; `409` se já há um igual na fila                               |
-| GET    | `/interno/v1/execucoes/:job/:execucaoId`    | `?aguardarMs=0..60000`         | `{ estado: na_fila \| rodando \| concluida \| falhou, resultado?, erro? }`          |
-| GET    | `/interno/v1/empresas/:empresaId/situacao`  | —                              | `{ jobs: [{ job, estado, ultimaExecucao?, proximaExecucao? }], tokenSswGeradoEm? }` |
+| Método | Caminho                                     | Entrada                        | Saída                                                                      |
+| ------ | ------------------------------------------- | ------------------------------ | -------------------------------------------------------------------------- |
+| POST   | `/interno/v1/empresas/:empresaId/execucoes` | `{ job, dados?, deduplicar? }` | `202 { execucaoId }`; `409` se já há um igual na fila                      |
+| GET    | `/interno/v1/execucoes/:job/:execucaoId`    | `?aguardarMs=0..60000`         | `{ estado: na_fila \| rodando \| concluida \| falhou, resultado?, erro? }` |
+| GET    | `/interno/v1/empresas/:empresaId/situacao`  | —                              | `{ jobs: [...], aplicacao: { pendentes, rodando }, tokenSswGeradoEm? }`    |
 
 Jobs que se pode pedir (`JOBS_PEDIVEIS`) e os seus `dados`:
 
@@ -100,6 +102,13 @@ Jobs que se pode pedir (`JOBS_PEDIVEIS`) e os seus `dados`:
 `deduplicar: true` usa um id fixo por job e empresa (no webhook, por evento): o segundo pedido
 enquanto o primeiro está na fila volta 409. Os erros de execução saem genéricos
 ("Falha ao executar o job...") quando não são de negócio; o detalhe fica só no log.
+
+Na situação, cada job de `JOBS_ACOMPANHADOS` (os pedíveis, `sla-arquivos` e
+`limpar-ingestao-arquivos`: todos os do Diagnóstico SSW) traz `estado`, `ultimaExecucao?`,
+`proximaExecucao?`, `agendado`, as contagens da fila do job (todas as empresas: `naFila`, `rodando`,
+`atrasados`, `falhos`) e `ultimasFalhas` (até 3 da empresa: `execucaoId`, `quando`, `erro`,
+`tentativas`). `aplicacao` é a fila de aplicação da empresa ("Na fila" da Importação SSW) e se a
+aplicação está rodando.
 
 ### Operações manuais (Admin › Importação SSW)
 
@@ -165,96 +174,97 @@ as colunas (sem índices, chaves estrangeiras nem policies; quem manda no schema
 
 **Movidos e adaptados** (com os testes, quando havia):
 
-| Origem (erp-ssw)                                                             | Destino                                                      |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `packages/ingestao/src/casos-de-uso/aplicar.ts`                              | `src/aplicacao/casos-de-uso/aplicar.ts`                      |
-| `packages/ingestao/src/casos-de-uso/casos-de-uso.test.ts`                    | `src/aplicacao/casos-de-uso/casos-de-uso.test.ts`            |
-| `packages/ingestao/src/casos-de-uso/ciclo.ts`                                | `src/aplicacao/casos-de-uso/ciclo.ts`                        |
-| `packages/ingestao/src/casos-de-uso/empresa.ts`                              | `src/aplicacao/casos-de-uso/empresa.ts`                      |
-| `packages/ingestao/src/casos-de-uso/ftp.ts`                                  | `src/aplicacao/casos-de-uso/ftp.ts`                          |
-| `packages/ingestao/src/casos-de-uso/gravar-cte.ts`                           | `src/aplicacao/casos-de-uso/gravar-cte.ts`                   |
-| `packages/ingestao/src/casos-de-uso/index.ts`                                | `src/aplicacao/casos-de-uso/index.ts`                        |
-| `packages/ingestao/src/casos-de-uso/linhas.ts`                               | `src/aplicacao/casos-de-uso/linhas.ts`                       |
-| `apps/api/src/modulos/ingestao/casos-de-uso.ts` (aplicar, FTP, XML da tela)  | `src/aplicacao/casos-de-uso/manuais.ts` (+ `.test.ts`, novo) |
-| `apps/api/src/modulos/ingestao/rotas-admin.ts` (rotas das operações manuais) | `src/http/interno.ts`                                        |
-| `packages/ingestao/src/casos-de-uso/manutencao.ts`                           | `src/aplicacao/casos-de-uso/manutencao.ts`                   |
-| `packages/ingestao/src/casos-de-uso/portas.ts`                               | `src/aplicacao/casos-de-uso/portas.ts`                       |
-| `packages/ingestao/src/casos-de-uso/receber.ts`                              | `src/aplicacao/casos-de-uso/receber.ts`                      |
-| `packages/ingestao/src/casos-de-uso/xml.ts`                                  | `src/aplicacao/casos-de-uso/xml.ts`                          |
-| `packages/ingestao/src/aplicacao/aplicacao.test.ts`                          | `src/aplicacao/regras/aplicacao.test.ts`                     |
-| `packages/ingestao/src/aplicacao/candidato.ts`                               | `src/aplicacao/regras/candidato.ts`                          |
-| `packages/ingestao/src/aplicacao/ciclo.ts`                                   | `src/aplicacao/regras/ciclo.ts`                              |
-| `packages/ingestao/src/aplicacao/comum.ts`                                   | `src/aplicacao/regras/comum.ts`                              |
-| `packages/ingestao/src/aplicacao/estorno.ts`                                 | `src/aplicacao/regras/estorno.ts`                            |
-| `packages/ingestao/src/aplicacao/index.ts`                                   | `src/aplicacao/regras/index.ts`                              |
-| `packages/ingestao/src/aplicacao/partes-455.ts`                              | `src/aplicacao/regras/partes-455.ts`                         |
-| `packages/ingestao/src/aplicacao/romaneio-036.ts`                            | `src/aplicacao/regras/romaneio-036.ts`                       |
-| `apps/worker/src/config/env.ts`                                              | `src/config/ambiente.ts`                                     |
-| `apps/worker/src/fontes/bi2/bi2.test.ts`                                     | `src/fontes/bi2/bi2.test.ts`                                 |
-| `apps/worker/src/fontes/bi2/cliente.ts`                                      | `src/fontes/bi2/cliente.ts`                                  |
-| `apps/worker/src/fontes/bi2/job.ts`                                          | `src/fontes/bi2/job.ts`                                      |
-| `apps/worker/src/fontes/bi2/relatorio-0017.ts`                               | `src/fontes/bi2/relatorio-0017.ts`                           |
-| `apps/worker/src/fontes/bi2/repositorio.ts`                                  | `src/fontes/bi2/repositorio.ts`                              |
-| `apps/worker/src/fontes/comum/empresa.ts`                                    | `src/fontes/comum/empresa.ts`                                |
-| `apps/worker/src/fontes/comum/integracao.ts`                                 | `src/fontes/comum/integracao.ts`                             |
-| `apps/worker/src/fontes/comum/repositorio-integracoes.ts`                    | `src/fontes/comum/repositorio-integracoes.ts`                |
-| `packages/ingestao/src/relatorios/colunas-455.ts`                            | `src/fontes/relatorios/colunas-455.ts`                       |
-| `packages/ingestao/src/relatorios/deteccao.ts`                               | `src/fontes/relatorios/deteccao.ts`                          |
-| `packages/ingestao/src/relatorios/index.ts`                                  | `src/fontes/relatorios/index.ts`                             |
-| `packages/ingestao/src/relatorios/partes.ts`                                 | `src/fontes/relatorios/partes.ts`                            |
-| `packages/ingestao/src/relatorios/r036.ts`                                   | `src/fontes/relatorios/r036.ts`                              |
-| `packages/ingestao/src/relatorios/r038.ts`                                   | `src/fontes/relatorios/r038.ts`                              |
-| `packages/ingestao/src/relatorios/r306.ts`                                   | `src/fontes/relatorios/r306.ts`                              |
-| `packages/ingestao/src/relatorios/r455csv.ts`                                | `src/fontes/relatorios/r455csv.ts`                           |
-| `packages/ingestao/src/relatorios/r930.ts`                                   | `src/fontes/relatorios/r930.ts`                              |
-| `packages/ingestao/src/relatorios/relatorios.test.ts`                        | `src/fontes/relatorios/relatorios.test.ts`                   |
-| `packages/ingestao/src/relatorios/texto.ts`                                  | `src/fontes/relatorios/texto.ts`                             |
-| `packages/ingestao/src/relatorios/tipos.ts`                                  | `src/fontes/relatorios/tipos.ts`                             |
-| `apps/worker/src/fontes/ssw-api/cliente.ts`                                  | `src/fontes/ssw-api/cliente.ts`                              |
-| `apps/worker/src/fontes/ssw-api/cofre-de-token.ts`                           | `src/fontes/ssw-api/cofre-de-token.ts`                       |
-| `apps/worker/src/fontes/ssw-api/job.ts`                                      | `src/fontes/ssw-api/job.ts`                                  |
-| `apps/worker/src/fontes/ssw-api/ssw-api.test.ts`                             | `src/fontes/ssw-api/ssw-api.test.ts`                         |
-| `apps/worker/src/fontes/webhook/job.ts`                                      | `src/fontes/webhook/job.ts`                                  |
-| `apps/api/src/modulos/ingestao-ssw/webhook.ts` (+ `.test.ts`)                | `src/fontes/webhook/recepcao.ts`                             |
-| `apps/worker/src/fontes/webhook/repositorio.ts`                              | `src/fontes/webhook/repositorio.ts`                          |
-| `apps/worker/src/fontes/webhook/webhook.test.ts`                             | `src/fontes/webhook/webhook.test.ts`                         |
-| `packages/ingestao/src/xml-cte/index.ts`                                     | `src/fontes/xml-cte/index.ts`                                |
-| `packages/ingestao/src/xml-cte/leitor.ts`                                    | `src/fontes/xml-cte/leitor.ts`                               |
-| `packages/ingestao/src/xml-cte/regras.ts`                                    | `src/fontes/xml-cte/regras.ts`                               |
-| `packages/ingestao/src/xml-cte/xml-cte.test.ts`                              | `src/fontes/xml-cte/xml-cte.test.ts`                         |
-| `apps/api/src/infra/log.ts`                                                  | `src/http/log.ts`                                            |
-| `apps/api/src/modulos/ingestao/rotas-publicas.ts`                            | `src/http/publico/ingestao.ts`                               |
-| `apps/api/src/modulos/ingestao/repositorio.ts`                               | `src/http/publico/repositorio.ts`                            |
-| `apps/api/src/modulos/ingestao/servicos.ts`                                  | `src/http/publico/servicos.ts`                               |
-| `apps/api/src/modulos/ingestao-ssw/rotas-publicas.ts`                        | `src/http/publico/webhook.ts`                                |
-| `packages/ingestao/src/infra/coletas-050.ts`                                 | `src/infra/coletas-050.ts`                                   |
-| `apps/api/src/infra/limitador.ts`                                            | `src/infra/contador.ts`                                      |
-| `packages/ingestao/src/infra/credenciais.ts`                                 | `src/infra/credenciais.ts`                                   |
-| `packages/ingestao/src/infra/enfileirador.ts` (+ `.test.ts`)                 | `src/infra/enfileirador.ts`                                  |
-| `packages/ingestao/src/infra/index.ts`                                       | `src/infra/index.ts`                                         |
-| `packages/ingestao/src/infra/projecoes-romaneio.ts`                          | `src/infra/projecoes-romaneio.ts`                            |
-| `packages/ingestao/src/infra/redis.ts`                                       | `src/infra/redis.ts`                                         |
-| `packages/ingestao/src/infra/repositorio.ts` (+ `.test.ts`)                  | `src/infra/repositorio.ts`                                   |
-| `packages/ingestao/src/infra/sftp.ts` (+ `.test.ts`)                         | `src/infra/sftp.ts`                                          |
-| `apps/worker/src/agendamentos/agendamentos.ts`                               | `src/jobs/agendamentos/agendamentos.ts`                      |
-| `apps/worker/src/agendamentos/ingestao.ts` (+ `.test.ts`)                    | `src/jobs/agendamentos/ingestao.ts`                          |
-| `apps/worker/src/agendamentos/repositorio.ts`                                | `src/jobs/agendamentos/repositorio.ts`                       |
-| `apps/worker/src/jobs/coletas/job.ts` (+ `.test.ts`)                         | `src/jobs/coletas/job.ts`                                    |
-| `apps/worker/src/jobs/ingestao/jobs.ts`                                      | `src/jobs/ingestao/jobs.ts`                                  |
-| `apps/worker/src/worker.test.ts`                                             | `src/jobs/jobs.test.ts`                                      |
-| `apps/worker/src/jobs/manutencao/job.ts`                                     | `src/jobs/manutencao/job.ts`                                 |
-| `apps/worker/src/jobs/manutencao/repositorio.ts`                             | `src/jobs/manutencao/repositorio.ts`                         |
-| `apps/worker/src/processador.ts`                                             | `src/jobs/processador.ts`                                    |
-| `apps/worker/src/jobs/projecoes-romaneio/job.ts` (+ `.test.ts`)              | `src/jobs/projecoes-romaneio/job.ts`                         |
-| `apps/worker/src/jobs/registro.ts`                                           | `src/jobs/registro.ts`                                       |
-| `apps/worker/src/jobs/sla-arquivos/job.ts` (+ `.test.ts`)                    | `src/jobs/sla-arquivos/job.ts`                               |
-| `apps/worker/src/jobs/sla-arquivos/repositorio.ts`                           | `src/jobs/sla-arquivos/repositorio.ts`                       |
-| `apps/worker/src/testes/banco-falso.ts`                                      | `src/testes/banco-falso.ts`                                  |
-| `packages/ingestao/src/testes/cte.ts`                                        | `src/testes/cte.ts`                                          |
-| `packages/ingestao/src/testes/falsos.ts`                                     | `src/testes/falsos.ts`                                       |
-| `packages/ingestao/src/testes/index.ts`                                      | `src/testes/index.ts`                                        |
-| `apps/worker/src/testes/projecoes-falsas.ts`                                 | `src/testes/projecoes-falsas.ts`                             |
-| `packages/ingestao/src/testes/registros.ts`                                  | `src/testes/registros.ts`                                    |
+| Origem (erp-ssw)                                                                         | Destino                                                      |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `packages/ingestao/src/casos-de-uso/aplicar.ts`                                          | `src/aplicacao/casos-de-uso/aplicar.ts`                      |
+| `packages/ingestao/src/casos-de-uso/casos-de-uso.test.ts`                                | `src/aplicacao/casos-de-uso/casos-de-uso.test.ts`            |
+| `packages/ingestao/src/casos-de-uso/ciclo.ts`                                            | `src/aplicacao/casos-de-uso/ciclo.ts`                        |
+| `packages/ingestao/src/casos-de-uso/empresa.ts`                                          | `src/aplicacao/casos-de-uso/empresa.ts`                      |
+| `packages/ingestao/src/casos-de-uso/ftp.ts`                                              | `src/aplicacao/casos-de-uso/ftp.ts`                          |
+| `packages/ingestao/src/casos-de-uso/gravar-cte.ts`                                       | `src/aplicacao/casos-de-uso/gravar-cte.ts`                   |
+| `packages/ingestao/src/casos-de-uso/index.ts`                                            | `src/aplicacao/casos-de-uso/index.ts`                        |
+| `packages/ingestao/src/casos-de-uso/linhas.ts`                                           | `src/aplicacao/casos-de-uso/linhas.ts`                       |
+| `apps/api/src/modulos/ingestao/casos-de-uso.ts` (aplicar, FTP, XML da tela)              | `src/aplicacao/casos-de-uso/manuais.ts` (+ `.test.ts`, novo) |
+| `apps/api/src/modulos/ingestao/rotas-admin.ts` (rotas das operações manuais)             | `src/http/interno.ts`                                        |
+| `apps/migrador/src/passos/projecoes.ts` (commit 94fc9e6, leitura da staging do `public`) | `src/cli/origem-public.ts`                                   |
+| `packages/ingestao/src/casos-de-uso/manutencao.ts`                                       | `src/aplicacao/casos-de-uso/manutencao.ts`                   |
+| `packages/ingestao/src/casos-de-uso/portas.ts`                                           | `src/aplicacao/casos-de-uso/portas.ts`                       |
+| `packages/ingestao/src/casos-de-uso/receber.ts`                                          | `src/aplicacao/casos-de-uso/receber.ts`                      |
+| `packages/ingestao/src/casos-de-uso/xml.ts`                                              | `src/aplicacao/casos-de-uso/xml.ts`                          |
+| `packages/ingestao/src/aplicacao/aplicacao.test.ts`                                      | `src/aplicacao/regras/aplicacao.test.ts`                     |
+| `packages/ingestao/src/aplicacao/candidato.ts`                                           | `src/aplicacao/regras/candidato.ts`                          |
+| `packages/ingestao/src/aplicacao/ciclo.ts`                                               | `src/aplicacao/regras/ciclo.ts`                              |
+| `packages/ingestao/src/aplicacao/comum.ts`                                               | `src/aplicacao/regras/comum.ts`                              |
+| `packages/ingestao/src/aplicacao/estorno.ts`                                             | `src/aplicacao/regras/estorno.ts`                            |
+| `packages/ingestao/src/aplicacao/index.ts`                                               | `src/aplicacao/regras/index.ts`                              |
+| `packages/ingestao/src/aplicacao/partes-455.ts`                                          | `src/aplicacao/regras/partes-455.ts`                         |
+| `packages/ingestao/src/aplicacao/romaneio-036.ts`                                        | `src/aplicacao/regras/romaneio-036.ts`                       |
+| `apps/worker/src/config/env.ts`                                                          | `src/config/ambiente.ts`                                     |
+| `apps/worker/src/fontes/bi2/bi2.test.ts`                                                 | `src/fontes/bi2/bi2.test.ts`                                 |
+| `apps/worker/src/fontes/bi2/cliente.ts`                                                  | `src/fontes/bi2/cliente.ts`                                  |
+| `apps/worker/src/fontes/bi2/job.ts`                                                      | `src/fontes/bi2/job.ts`                                      |
+| `apps/worker/src/fontes/bi2/relatorio-0017.ts`                                           | `src/fontes/bi2/relatorio-0017.ts`                           |
+| `apps/worker/src/fontes/bi2/repositorio.ts`                                              | `src/fontes/bi2/repositorio.ts`                              |
+| `apps/worker/src/fontes/comum/empresa.ts`                                                | `src/fontes/comum/empresa.ts`                                |
+| `apps/worker/src/fontes/comum/integracao.ts`                                             | `src/fontes/comum/integracao.ts`                             |
+| `apps/worker/src/fontes/comum/repositorio-integracoes.ts`                                | `src/fontes/comum/repositorio-integracoes.ts`                |
+| `packages/ingestao/src/relatorios/colunas-455.ts`                                        | `src/fontes/relatorios/colunas-455.ts`                       |
+| `packages/ingestao/src/relatorios/deteccao.ts`                                           | `src/fontes/relatorios/deteccao.ts`                          |
+| `packages/ingestao/src/relatorios/index.ts`                                              | `src/fontes/relatorios/index.ts`                             |
+| `packages/ingestao/src/relatorios/partes.ts`                                             | `src/fontes/relatorios/partes.ts`                            |
+| `packages/ingestao/src/relatorios/r036.ts`                                               | `src/fontes/relatorios/r036.ts`                              |
+| `packages/ingestao/src/relatorios/r038.ts`                                               | `src/fontes/relatorios/r038.ts`                              |
+| `packages/ingestao/src/relatorios/r306.ts`                                               | `src/fontes/relatorios/r306.ts`                              |
+| `packages/ingestao/src/relatorios/r455csv.ts`                                            | `src/fontes/relatorios/r455csv.ts`                           |
+| `packages/ingestao/src/relatorios/r930.ts`                                               | `src/fontes/relatorios/r930.ts`                              |
+| `packages/ingestao/src/relatorios/relatorios.test.ts`                                    | `src/fontes/relatorios/relatorios.test.ts`                   |
+| `packages/ingestao/src/relatorios/texto.ts`                                              | `src/fontes/relatorios/texto.ts`                             |
+| `packages/ingestao/src/relatorios/tipos.ts`                                              | `src/fontes/relatorios/tipos.ts`                             |
+| `apps/worker/src/fontes/ssw-api/cliente.ts`                                              | `src/fontes/ssw-api/cliente.ts`                              |
+| `apps/worker/src/fontes/ssw-api/cofre-de-token.ts`                                       | `src/fontes/ssw-api/cofre-de-token.ts`                       |
+| `apps/worker/src/fontes/ssw-api/job.ts`                                                  | `src/fontes/ssw-api/job.ts`                                  |
+| `apps/worker/src/fontes/ssw-api/ssw-api.test.ts`                                         | `src/fontes/ssw-api/ssw-api.test.ts`                         |
+| `apps/worker/src/fontes/webhook/job.ts`                                                  | `src/fontes/webhook/job.ts`                                  |
+| `apps/api/src/modulos/ingestao-ssw/webhook.ts` (+ `.test.ts`)                            | `src/fontes/webhook/recepcao.ts`                             |
+| `apps/worker/src/fontes/webhook/repositorio.ts`                                          | `src/fontes/webhook/repositorio.ts`                          |
+| `apps/worker/src/fontes/webhook/webhook.test.ts`                                         | `src/fontes/webhook/webhook.test.ts`                         |
+| `packages/ingestao/src/xml-cte/index.ts`                                                 | `src/fontes/xml-cte/index.ts`                                |
+| `packages/ingestao/src/xml-cte/leitor.ts`                                                | `src/fontes/xml-cte/leitor.ts`                               |
+| `packages/ingestao/src/xml-cte/regras.ts`                                                | `src/fontes/xml-cte/regras.ts`                               |
+| `packages/ingestao/src/xml-cte/xml-cte.test.ts`                                          | `src/fontes/xml-cte/xml-cte.test.ts`                         |
+| `apps/api/src/infra/log.ts`                                                              | `src/http/log.ts`                                            |
+| `apps/api/src/modulos/ingestao/rotas-publicas.ts`                                        | `src/http/publico/ingestao.ts`                               |
+| `apps/api/src/modulos/ingestao/repositorio.ts`                                           | `src/http/publico/repositorio.ts`                            |
+| `apps/api/src/modulos/ingestao/servicos.ts`                                              | `src/http/publico/servicos.ts`                               |
+| `apps/api/src/modulos/ingestao-ssw/rotas-publicas.ts`                                    | `src/http/publico/webhook.ts`                                |
+| `packages/ingestao/src/infra/coletas-050.ts`                                             | `src/infra/coletas-050.ts`                                   |
+| `apps/api/src/infra/limitador.ts`                                                        | `src/infra/contador.ts`                                      |
+| `packages/ingestao/src/infra/credenciais.ts`                                             | `src/infra/credenciais.ts`                                   |
+| `packages/ingestao/src/infra/enfileirador.ts` (+ `.test.ts`)                             | `src/infra/enfileirador.ts`                                  |
+| `packages/ingestao/src/infra/index.ts`                                                   | `src/infra/index.ts`                                         |
+| `packages/ingestao/src/infra/projecoes-romaneio.ts`                                      | `src/infra/projecoes-romaneio.ts`                            |
+| `packages/ingestao/src/infra/redis.ts`                                                   | `src/infra/redis.ts`                                         |
+| `packages/ingestao/src/infra/repositorio.ts` (+ `.test.ts`)                              | `src/infra/repositorio.ts`                                   |
+| `packages/ingestao/src/infra/sftp.ts` (+ `.test.ts`)                                     | `src/infra/sftp.ts`                                          |
+| `apps/worker/src/agendamentos/agendamentos.ts`                                           | `src/jobs/agendamentos/agendamentos.ts`                      |
+| `apps/worker/src/agendamentos/ingestao.ts` (+ `.test.ts`)                                | `src/jobs/agendamentos/ingestao.ts`                          |
+| `apps/worker/src/agendamentos/repositorio.ts`                                            | `src/jobs/agendamentos/repositorio.ts`                       |
+| `apps/worker/src/jobs/coletas/job.ts` (+ `.test.ts`)                                     | `src/jobs/coletas/job.ts`                                    |
+| `apps/worker/src/jobs/ingestao/jobs.ts`                                                  | `src/jobs/ingestao/jobs.ts`                                  |
+| `apps/worker/src/worker.test.ts`                                                         | `src/jobs/jobs.test.ts`                                      |
+| `apps/worker/src/jobs/manutencao/job.ts`                                                 | `src/jobs/manutencao/job.ts`                                 |
+| `apps/worker/src/jobs/manutencao/repositorio.ts`                                         | `src/jobs/manutencao/repositorio.ts`                         |
+| `apps/worker/src/processador.ts`                                                         | `src/jobs/processador.ts`                                    |
+| `apps/worker/src/jobs/projecoes-romaneio/job.ts` (+ `.test.ts`)                          | `src/jobs/projecoes-romaneio/job.ts`                         |
+| `apps/worker/src/jobs/registro.ts`                                                       | `src/jobs/registro.ts`                                       |
+| `apps/worker/src/jobs/sla-arquivos/job.ts` (+ `.test.ts`)                                | `src/jobs/sla-arquivos/job.ts`                               |
+| `apps/worker/src/jobs/sla-arquivos/repositorio.ts`                                       | `src/jobs/sla-arquivos/repositorio.ts`                       |
+| `apps/worker/src/testes/banco-falso.ts`                                                  | `src/testes/banco-falso.ts`                                  |
+| `packages/ingestao/src/testes/cte.ts`                                                    | `src/testes/cte.ts`                                          |
+| `packages/ingestao/src/testes/falsos.ts`                                                 | `src/testes/falsos.ts`                                       |
+| `packages/ingestao/src/testes/index.ts`                                                  | `src/testes/index.ts`                                        |
+| `apps/worker/src/testes/projecoes-falsas.ts`                                             | `src/testes/projecoes-falsas.ts`                             |
+| `packages/ingestao/src/testes/registros.ts`                                              | `src/testes/registros.ts`                                    |
 
 **Novos** (sem origem no ERP): `src/http/{app,interno,saude,erros,limite}.ts`,
 `src/contrato-interno.ts`, `src/infra/execucoes.ts`, `src/banco/contrato-de-schema.ts`,

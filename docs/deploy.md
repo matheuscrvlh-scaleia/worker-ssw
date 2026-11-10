@@ -21,9 +21,20 @@ docker compose up -d
 docker compose ps              # worker-ssw "healthy" = banco, Redis e consumidores ok
 ```
 
-Na virada, depois de ligar: `docker compose run --rm worker-ssw dist/main.js
-reconstruir-projecoes --todas` (ou `--empresa <uuid>`). Só então `AGENDAMENTOS_LIGADOS=true` e
-`INGESTAO_JOBS_LIGADOS` com os jobs desse ambiente, e `docker compose up -d` de novo.
+Na virada, depois de ligar, reconstruir as projeções do Romaneio a partir da staging INTEIRA do
+`public` do sistema atual (o `erp.ingestao_linhas` só tem 60 dias; sem a origem, as viagens
+antigas se perdem):
+
+```bash
+# ORIGEM_URL = conexão do sistema atual com o papel postgres (fica só no shell, nunca no .env)
+docker compose run --rm worker-ssw dist/main.js reconstruir-projecoes --todas \n  --origem-url "$ORIGEM_URL" --confirmar-producao
+```
+
+A origem abre em só leitura (`default_transaction_read_only = on`) e só recebe `select`; a gravação
+é no `erp`. Sem `--confirmar-producao`, uma URL do projeto de produção é recusada. Sem
+`--origem-url`, o comando lê `erp.ingestao_linhas` (conciliação do dia a dia). Só então
+`AGENDAMENTOS_LIGADOS=true` e `INGESTAO_JOBS_LIGADOS` com os jobs desse ambiente, e
+`docker compose up -d` de novo.
 
 ## 3. Atualizar sem queda
 
@@ -62,11 +73,11 @@ senha/token saem mascarados. Rotação: 5 arquivos de 20 MB por contêiner.
 
 Cada processo abre até `DB_MAX_CONEXOES` (padrão 5). No pior caso o worker-ssw usa:
 
-| Situação                                    | Conexões |
-| ------------------------------------------- | -------- |
-| Rodando normal                              | 5        |
-| Durante a atualização (duas réplicas)       | 10       |
-| `reconstruir-projecoes` com o serviço no ar | 10       |
+| Situação                                    | Conexões                     |
+| ------------------------------------------- | ---------------------------- |
+| Rodando normal                              | 5                            |
+| Durante a atualização (duas réplicas)       | 10                           |
+| `reconstruir-projecoes` com o serviço no ar | 10 (+1 na origem, se houver) |
 
 Some isso ao que o ERP já usa (API × réplicas + worker do ERP + migrador) e confira contra o
 limite do pooler do Supabase antes de subir `DB_MAX_CONEXOES`.

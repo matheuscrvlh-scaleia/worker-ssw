@@ -272,7 +272,7 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
     },
     inserirCodigos: (c) => Promise.resolve(void s.codigosNovos.push(...c.map((x) => x.codigo))),
     inserirOcorrencias: (lista) => {
-      let n = 0;
+      const ctes: string[] = [];
       for (const o of lista) {
         if (
           s.ocorrencias.some(
@@ -294,9 +294,9 @@ export function repositorioFalso(s: EstadoFalso): RepositorioIngestao {
           quarentena: o.quarentena,
           criadoEm: s.agora,
         });
-        n++;
+        ctes.push(o.cteId);
       }
-      return Promise.resolve(n);
+      return Promise.resolve(ctes);
     },
     apagarOcorrencia: (cteId, codigo, dataHora) => {
       const antes = s.ocorrencias.length;

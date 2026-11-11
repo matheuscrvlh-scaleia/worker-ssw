@@ -240,7 +240,9 @@ export async function aplicarEvento(
   });
 
   const ocorrencias = (await repo.ocorrenciasDosCtes([cte.id])).get(cte.id) ?? [];
-  await regravarCte(repo, { ...cad, catalogo }, cte, dadosDaNota(cte, evento), ocorrencias, agora);
+  await regravarCte(repo, { ...cad, catalogo }, cte, dadosDaNota(cte, evento), ocorrencias, agora, {
+    ocorrenciasMudaram: true,
+  });
   return {
     statusHttp: 200,
     motivoRejeicao: null,

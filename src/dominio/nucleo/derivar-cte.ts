@@ -5,7 +5,8 @@
  * o resultado (e a troca de previsão) na mesma transação.
  *
  * Diferente de hoje, **todos** os derivados são recalculados em toda gravação, e a efetiva usa a
- * emissão já ancorada na 80 (Q20 do dono).
+ * emissão já ancorada na 80 (Q20 do dono). A exceção é o `status_atual`, que (como hoje) só é
+ * refeito quando a gravação mexe nas ocorrências do CT-e (`ocorrenciasMudaram`).
  */
 import { ehFonteBi2, type FonteDaEscrita, mesclarEscritaBi2 } from "./bi2";
 import { cidadeDaFilial, type FilialCadastrada } from "./cadastros";
@@ -68,6 +69,13 @@ export interface ContextoDoCte {
   filiais: readonly FilialCadastrada[];
   regrasDePrazo: readonly RegraDePrazo[];
   config: ConfiguracaoDoNucleo;
+  /**
+   * `true` quando esta gravação inseriu, alterou ou apagou ocorrência do CT-e (ou o catálogo dos
+   * códigos dele mudou). Só então o `status_atual` é refeito pelas ocorrências; nas demais vale o
+   * gravado, inclusive o escrito pelo chamador (ex.: "CANCELADO" do XML).
+   * origem: trg_sync_status_atual roda só na gravação de ocorrência (sistema atual)
+   */
+  ocorrenciasMudaram: boolean;
 }
 
 /** Colunas que o núcleo escreve. */
@@ -120,7 +128,8 @@ export function recalcularDerivadosDoCte(cte: CteNucleo, contexto: ContextoDoCte
     prazoPadraoDias: diasPadrao,
     prazoPadraoData: prazoPadraoData(dataEmissao, previsao.dataPrevistaEntrega, diasPadrao),
     dataEmbarque: dataEmbarque(ocorrencias) ?? cte.dataEmbarque,
-    statusAtual: statusAtual(ocorrencias, catalogo) ?? cte.statusAtual,
+    statusAtual:
+      (contexto.ocorrenciasMudaram ? statusAtual(ocorrencias, catalogo) : null) ?? cte.statusAtual,
     foraUniverso: foraDoUniverso(cancelado, cte.duplicadoDe),
   };
 }

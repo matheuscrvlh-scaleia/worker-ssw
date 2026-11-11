@@ -174,6 +174,28 @@ describe("XML enviado à mão", () => {
     expect(deNovo.status).toBe("duplicado");
   });
 
+  it("cancelamento grava CANCELADO mesmo com ocorrência no CT-e (status só muda por ocorrência)", async () => {
+    const { s, manuais } = montar();
+    const cte = cteDeTeste({ chave: CHAVE });
+    s.ctes.push(cte);
+    s.ocorrencias.push({
+      id: "oc-99",
+      cteId: cte.id,
+      codigo: 99,
+      descricao: "CTRC BAIXADO/CANCELADO",
+      dataHora: new Date("2026-11-04T10:00:00Z"),
+      filial: null,
+      origem: "ssw_930",
+      quarentena: false,
+      criadoEm: new Date("2026-11-04T10:30:00Z"),
+    });
+    await manuais.importarXml(EMPRESA, {
+      nomeArquivo: "can.xml",
+      conteudoBase64: textoEm64(XML_CAN),
+    });
+    expect(s.ctes[0]?.statusAtual).toBe("CANCELADO");
+  });
+
   it("recusa o que não é .xml nem .zip; zip corrompido volta erro sem gravar item", async () => {
     const { xml, manuais } = montar();
     await expect(

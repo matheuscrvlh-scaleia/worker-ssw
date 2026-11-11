@@ -46,6 +46,9 @@ export async function abrirOrigem(
   const cliente = criarCliente(url);
   await cliente.connect();
   await cliente.query("SET default_transaction_read_only = on");
+  // A lista de CT-e varre a staging inteira (2 min 22 s no DEVELOP, 11/11/2026), acima do limite
+  // padrão do Supabase (2 min). Comando único da virada e só leitura: sem limite nesta sessão.
+  await cliente.query("SET statement_timeout = 0");
   return {
     // As colunas de cada linha são as do `select` de quem chama (aqui mesmo, neste arquivo).
     consultar: async <T extends object>(sql: string, parametros: readonly unknown[]) =>
@@ -104,12 +107,11 @@ export async function linhasDaOrigem(
         where o.empresa_id = $1 and ${numero} = any($2::text[])`,
       [empresaId, numeros],
     );
-  const [l036, l306, l038, l455] = await Promise.all([
-    ler("staging_036_romaneios", "ctrc", "public.ssw_num_ctrc(o.ctrc)"),
-    ler("staging_306_ssw_mobile", "ctrc_coleta", "o.numero_ctrc_norm"),
-    ler("staging_038_ctrcs_pendentes", "ctrc", "public.ssw_num_ctrc(o.ctrc)"),
-    ler("staging_455_ctrcs_expedidos", "ctrc", "public.ssw_num_ctrc(o.ctrc)"),
-  ]);
+  // Em sequência: é um cliente só (o pg@9 recusa consulta enquanto outra roda no mesmo cliente).
+  const l036 = await ler("staging_036_romaneios", "ctrc", "public.ssw_num_ctrc(o.ctrc)");
+  const l306 = await ler("staging_306_ssw_mobile", "ctrc_coleta", "o.numero_ctrc_norm");
+  const l038 = await ler("staging_038_ctrcs_pendentes", "ctrc", "public.ssw_num_ctrc(o.ctrc)");
+  const l455 = await ler("staging_455_ctrcs_expedidos", "ctrc", "public.ssw_num_ctrc(o.ctrc)");
   const porCte = new Map<
     string,
     { l036: Linha036[]; l306: Linha306[]; l038: Linha038[]; l455: Linha455[] }

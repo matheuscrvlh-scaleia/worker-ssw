@@ -145,6 +145,7 @@ describe("reconstruir-projecoes: execução", () => {
     expect(comandos).toEqual([
       "connect",
       "SET default_transaction_read_only = on",
+      "SET statement_timeout = 0",
       "select 1",
       "end",
     ]);

@@ -165,5 +165,10 @@ export const romaneioConferenteCte = erp.table("romaneio_conferente_cte", {
   numero: text("numero").notNull(),
   conferente: text("conferente"),
   romaneio: text("romaneio").notNull(),
+  dataOcorrCtrc: dia("data_ocorr_ctrc"),
+  horaOcorrCtrc: text("hora_ocorr_ctrc"),
+  situacao: text("situacao"),
+  dataEmissao: dia("data_emissao"),
+  importadoEm: instante("importado_em"),
   atualizadoEm: atualizadoEm(),
 });

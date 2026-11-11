@@ -337,35 +337,68 @@ export function dadosRelatoriosDoCte(
 // ---------------------------------------------------------------------------------------------
 // Conferente e romaneio do CT-e (tela Ocorrências)
 
+/** Chave de ordem da linha 036 que deu o conferente (campos da linha). */
+export interface OrdemDoConferente {
+  dataOcorrCtrc: string | null;
+  horaOcorrCtrc: string | null;
+  situacao: string | null;
+  dataEmissao: string | null;
+  importadoEm: Date;
+}
+
 export interface ConferenteDoCte {
   conferente: string | null;
   romaneio: string;
+  /**
+   * Chave da linha vencedora: a linha expira (60 dias) e a gravada concorre com as guardadas.
+   * Nula no que foi gravado antes de a chave existir.
+   */
+  ordem: OrdemDoConferente | null;
 }
 
-const baixado = (l: Linha036) => (l.situacao === null ? null : String(l.situacao === "BAIXADO"));
+const baixado = (o: OrdemDoConferente) =>
+  o.situacao === null ? null : String(o.situacao === "BAIXADO");
+
+function compararOrdem(a: OrdemDoConferente, b: OrdemDoConferente): number {
+  return (
+    descNulosUltimo(a.dataOcorrCtrc, b.dataOcorrCtrc) ||
+    descNulosUltimo(a.horaOcorrCtrc, b.horaOcorrCtrc) ||
+    descNulosPrimeiro(baixado(a), baixado(b)) ||
+    descNulosUltimo(a.dataEmissao, b.dataEmissao) ||
+    maisNovaPrimeiro(a, b)
+  );
+}
 
 /**
  * Entre as linhas 036 com romaneio e situação diferente de CANCELADO, a primeira por data/hora da
  * ocorrência do CT-e (nulas por último), BAIXADO primeiro (situação nula antes), emissão e
- * importação. Sem linha válida guardada, fica o que estava gravado.
+ * importação. O sistema atual lê a staging inteira; aqui a linha vencedora pode ter expirado, então
+ * o gravado (com a chave dele) concorre com as linhas guardadas e só perde para uma melhor; no
+ * empate, a guardada vence. Sem linha válida guardada, fica o que estava gravado.
  * origem: _ocorrencias_conferente_romaneio (sistema atual)
  */
 export function conferenteDoCte(
   linhas: readonly Linha036[],
   gravado: ConferenteDoCte | null,
 ): ConferenteDoCte | null {
-  const l = linhas
-    .filter((x) => x.romaneio !== null && x.situacao !== "CANCELADO" && sswNum(x.ctrc) !== null)
-    .sort(
-      (a, b) =>
-        descNulosUltimo(a.dataOcorrCtrc, b.dataOcorrCtrc) ||
-        descNulosUltimo(a.horaOcorrCtrc, b.horaOcorrCtrc) ||
-        descNulosPrimeiro(baixado(a), baixado(b)) ||
-        descNulosUltimo(a.dataEmissao, b.dataEmissao) ||
-        maisNovaPrimeiro(a, b),
-    )[0];
-  if (!l?.romaneio) return gravado;
-  return { conferente: l.conferente?.trim() || null, romaneio: l.romaneio };
+  const candidatos: { conferente: string | null; romaneio: string; ordem: OrdemDoConferente }[] =
+    [];
+  for (const l of linhas) {
+    if (l.romaneio === null || l.situacao === "CANCELADO" || sswNum(l.ctrc) === null) continue;
+    candidatos.push({
+      conferente: l.conferente?.trim() || null,
+      romaneio: l.romaneio,
+      ordem: {
+        dataOcorrCtrc: l.dataOcorrCtrc,
+        horaOcorrCtrc: l.horaOcorrCtrc,
+        situacao: l.situacao,
+        dataEmissao: l.dataEmissao,
+        importadoEm: l.importadoEm,
+      },
+    });
+  }
+  if (gravado?.ordem) candidatos.push({ ...gravado, ordem: gravado.ordem });
+  return candidatos.sort((a, b) => compararOrdem(a.ordem, b.ordem))[0] ?? gravado;
 }
 
 // ---------------------------------------------------------------------------------------------

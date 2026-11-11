@@ -22,6 +22,7 @@ import {
 import {
   type ChaveCte,
   chaveDoCte,
+  type ConferenteDoCte,
   type DadosRelatorios,
   type LinhasDoCte,
   type RepositorioProjecoesRomaneio,
@@ -97,6 +98,22 @@ function dadosDaLinha(r: typeof cteDadosRelatorios.$inferSelect): DadosRelatorio
         }
       : null,
     valorMercadoria455: numero(r.valorMercadoria455),
+  };
+}
+
+function conferenteDaLinha(r: typeof romaneioConferenteCte.$inferSelect): ConferenteDoCte {
+  return {
+    conferente: r.conferente,
+    romaneio: r.romaneio,
+    ordem: r.importadoEm
+      ? {
+          dataOcorrCtrc: r.dataOcorrCtrc,
+          horaOcorrCtrc: r.horaOcorrCtrc,
+          situacao: r.situacao,
+          dataEmissao: r.dataEmissao,
+          importadoEm: r.importadoEm,
+        }
+      : null,
   };
 }
 
@@ -180,12 +197,7 @@ export function criarRepositorioProjecoesRomaneio(
         saidas: agrupar(saidas, (r) => r.dataSaida),
         atuais: new Map(atuais.map((r) => [chaveDoCte(r), atualDaLinha(r)])),
         dados: new Map(dados.map((r) => [chaveDoCte(r), dadosDaLinha(r)])),
-        conferentes: new Map(
-          conferentes.map((r) => [
-            chaveDoCte(r),
-            { conferente: r.conferente, romaneio: r.romaneio },
-          ]),
-        ),
+        conferentes: new Map(conferentes.map((r) => [chaveDoCte(r), conferenteDaLinha(r)])),
       };
     },
 
@@ -251,7 +263,21 @@ export function criarRepositorioProjecoesRomaneio(
           : [],
       );
       const conferentes = projecoes.flatMap(({ chave, conferente }) =>
-        conferente ? [{ empresaId, ...chave, ...conferente }] : [],
+        conferente
+          ? [
+              {
+                empresaId,
+                ...chave,
+                conferente: conferente.conferente,
+                romaneio: conferente.romaneio,
+                dataOcorrCtrc: conferente.ordem?.dataOcorrCtrc ?? null,
+                horaOcorrCtrc: conferente.ordem?.horaOcorrCtrc ?? null,
+                situacao: conferente.ordem?.situacao ?? null,
+                dataEmissao: conferente.ordem?.dataEmissao ?? null,
+                importadoEm: conferente.ordem?.importadoEm ?? null,
+              },
+            ]
+          : [],
       );
       for (const lote of emLotes(viagens)) await tx.insert(romaneioViagensCte).values(lote);
       for (const lote of emLotes(saidas)) await tx.insert(romaneioSaidasCte).values(lote);

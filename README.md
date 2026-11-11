@@ -69,8 +69,7 @@ falsos (`src/testes/`).
 | `SFTP_*`                 | —                    | SFTP só para integração com `parametros.usar_env` (transição da FR)       |
 | `NODE_ENV` / `LOG_NIVEL` | `development`/`info` | Ambiente e nível do pino                                                  |
 
-No compose ainda entram `REDIS_SENHA`, `WORKER_CPUS` e
-`WORKER_MEMORIA` (ver `.env.example` e `docs/deploy.md`).
+No compose ainda entra `REDIS_SENHA` (ver `.env.example` e `docs/deploy.md`).
 
 ## Contrato do HTTP interno
 

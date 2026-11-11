@@ -2,7 +2,7 @@
 #   verificar     tipos, ESLint, Prettier, testes com cobertura e build
 #   dependencias  vulnerabilidades no bun.lock (osv-scanner)
 #   imagem        build da imagem (sem push) + Trivy (vulnerabilidade e segredo)
-#   infra         compose.yaml, Dockerfile (hadolint) e workflows (actionlint)
+#   infra         docker-compose.yml, Dockerfile (hadolint) e workflows (actionlint)
 #   segredos      gitleaks no histórico
 #
 # Actions de terceiros e imagens de ferramenta fixadas por SHA/digest (a tag ao lado é só para
@@ -151,7 +151,7 @@ jobs:
           persist-credentials: false
 
       # Valores de mentira só para interpolar (nada aqui é segredo nem sai do job).
-      - name: compose.yaml
+      - name: docker-compose.yml
         run: |
           cp .env.example .env
           cat >> .env <<'EOF'

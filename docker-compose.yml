@@ -1,0 +1,46 @@
+# worker-ssw + Redis. Variáveis em .env (modelo em .env.example).
+#   docker compose up -d --build
+# Porta: 3000 no contêiner, 3002 no host.
+
+services:
+  worker-ssw:
+    build: .
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORTA: "3000"
+      REDIS_URL: redis://:${REDIS_SENHA:?defina REDIS_SENHA no .env}@redis:6379/0
+    ports:
+      - "3002:3000"
+    volumes:
+      # CA do Supabase para sslmode=verify-full.
+      - ./certs:/etc/erp/certs:ro
+    depends_on:
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+    # Espera os jobs em andamento terminarem (até 30 s; main.ts).
+    stop_grace_period: 40s
+
+  redis:
+    image: redis:7.4.12-alpine
+    environment:
+      REDIS_SENHA: ${REDIS_SENHA}
+    # A senha entra pelo ambiente, não pela linha de comando do compose.
+    command:
+      [
+        "sh",
+        "-c",
+        'exec redis-server /usr/local/etc/redis/redis.conf --requirepass "$$REDIS_SENHA"',
+      ]
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis_dados:/data
+    healthcheck:
+      test: ["CMD-SHELL", 'REDISCLI_AUTH="$$REDIS_SENHA" redis-cli ping | grep -q PONG']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  redis_dados:

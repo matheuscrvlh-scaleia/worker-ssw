@@ -16,7 +16,8 @@ noutra; o que liga os dois é a rede Docker externa `erp-interna` (ADR 0012 do E
 ## 2. Subir
 
 ```bash
-docker compose pull            # ou: docker compose build
+git clone https://github.com/matheuscrvlh-scaleia/worker-ssw.git ~/worker-ssw  # 1ª vez
+docker compose build           # imagem worker-ssw:local, a partir do código
 docker compose up -d
 docker compose ps              # worker-ssw "healthy" = banco, Redis e consumidores ok
 ```
@@ -42,8 +43,8 @@ Sobe a réplica nova ao lado da antiga, espera ficar saudável e só então para
 segue mandando para quem responde; o BullMQ não entrega o mesmo job a duas réplicas):
 
 ```bash
-export IMAGEM_TAG=<tag nova>   # e grava no .env
-docker compose pull worker-ssw
+git pull --ff-only
+docker compose build worker-ssw
 antiga=$(docker compose ps -q worker-ssw)
 docker compose up -d --no-deps --no-recreate --scale worker-ssw=2 worker-ssw
 docker compose ps worker-ssw   # repetir até a nova estar "healthy"
@@ -55,7 +56,7 @@ Se a nova não ficar saudável: `docker logs <nova>`, `docker rm -f <nova>`; a a
 
 ## 4. Voltar
 
-Mesmo passo da seção 3 com a tag anterior em `IMAGEM_TAG`. Não há migration a desfazer: o schema
+`git checkout <commit anterior>` e o mesmo passo da seção 3 sem o `git pull` (depois, `git checkout main`). Não há migration a desfazer: o schema
 é do ERP. Se o ERP mudou o schema e a versão antiga não confere mais, ela recusa subir (log
 `worker-ssw não sobe`, com a lista do que diverge) e a nova continua no ar.
 

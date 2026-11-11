@@ -155,7 +155,6 @@ jobs:
         run: |
           cp .env.example .env
           cat >> .env <<'EOF'
-          IMAGEM_TAG=ci
           DATABASE_URL=postgres://erp_worker:x@banco.invalido:5432/postgres
           REDIS_SENHA=ci
           INTERNO_TOKENS=ci-ci-ci-ci-ci-ci-ci-ci-ci-ci-ci-ci

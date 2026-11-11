@@ -2,7 +2,7 @@
 # Variáveis em .env (fora do git; modelo em .env.example).
 #
 #   docker compose config --quiet                 # confere a interpolação
-#   docker compose up -d                          # sobe (ou atualiza para IMAGEM_TAG)
+#   git pull && docker compose build && docker compose up -d   # sobe ou atualiza
 #   docker compose run --rm worker-ssw dist/main.js reconstruir-projecoes --todas
 #
 # Redes:
@@ -32,7 +32,7 @@ x-endurecido: &endurecido
 services:
   worker-ssw:
     <<: *endurecido
-    image: ${REGISTRO:-ghcr.io/dono/worker-ssw}/worker-ssw:${IMAGEM_TAG:?defina IMAGEM_TAG no .env}
+    image: worker-ssw:local
     build:
       context: .
     init: true

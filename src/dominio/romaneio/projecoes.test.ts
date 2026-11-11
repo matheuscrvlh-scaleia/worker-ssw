@@ -60,16 +60,24 @@ describe("viagens do CT-e (5.1)", () => {
 });
 
 describe("dias de saída (5.4)", () => {
-  it("uma linha não cancelada basta; dia só com canceladas sai; dia expirado fica", () => {
+  it("uma linha não cancelada basta; dia só com canceladas não entra; dia expirado fica", () => {
     const dias = saidasDoCte(
       [
         linha036({ dataEmissao: "2026-11-10", situacao: "CANCELADO" }),
         linha036({ dataEmissao: "2026-11-10", romaneio: "R2", situacao: null }),
-        linha036({ dataEmissao: "2026-11-09", situacao: "CANCELADO" }),
+        linha036({ dataEmissao: "2026-11-11", situacao: "CANCELADO" }),
       ],
-      ["2026-11-09", "2026-08-01"],
+      ["2026-08-01"],
     );
     expect(dias).toEqual(["2026-08-01", "2026-11-10"]);
+  });
+
+  it("linha cancelada não tira dia gravado cuja linha válida já expirou (como a staging de hoje)", () => {
+    const dias = saidasDoCte(
+      [linha036({ dataEmissao: "2026-08-01", situacao: "CANCELADO" })],
+      ["2026-08-01"],
+    );
+    expect(dias).toEqual(["2026-08-01"]);
   });
 });
 

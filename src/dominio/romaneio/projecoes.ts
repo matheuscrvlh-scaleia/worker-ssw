@@ -143,19 +143,19 @@ export function viagensDoCte(
 // 5.4 Dias de saída
 
 /**
- * Dias em que o CT-e saiu: basta UMA linha não cancelada no dia (de qualquer importação). Dia
- * cujas linhas guardadas estão todas canceladas sai; dia sem linha guardada fica.
+ * Dias em que o CT-e saiu: basta UMA linha não cancelada no dia (de qualquer importação). Linha
+ * cancelada nunca tira dia: hoje o gatilho só tira o dia quando a linha válida é apagada da
+ * staging, e a linha válida que expirou daqui continua lá. Dia gravado só sai pelo descarte de
+ * ciclo (`semODescartado`).
  * origem: romaneio_saida_ctrc (gatilho _romaneio_saida_ctrc_sync)
  */
 export function saidasDoCte(linhas: readonly Linha036[], gravadas: readonly string[]): string[] {
-  const valido = new Map<string, boolean>();
+  const dias = new Set(gravadas);
   for (const l of linhas) {
-    if (l.dataEmissao === null || sswNum(l.ctrc) === null) continue;
-    const ok = l.situacao !== "CANCELADO";
-    valido.set(l.dataEmissao, (valido.get(l.dataEmissao) ?? false) || ok);
+    if (l.dataEmissao !== null && sswNum(l.ctrc) !== null && l.situacao !== "CANCELADO") {
+      dias.add(l.dataEmissao);
+    }
   }
-  const dias = new Set(gravadas.filter((d) => valido.get(d) !== false));
-  for (const [dia, ok] of valido) if (ok) dias.add(dia);
   return [...dias].sort();
 }
 

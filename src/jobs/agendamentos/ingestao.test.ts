@@ -3,6 +3,7 @@ import { pino } from "pino";
 import { describe, expect, it } from "vitest";
 
 import { BancoFalso } from "../../testes/banco-falso";
+import { type ContextoDoJob } from "../registro";
 import {
   agendamentosDeIngestao,
   criarDespachante,
@@ -79,5 +80,29 @@ describe("agendador da ingestão", () => {
       },
     ]);
     expect(banco.contextos).toEqual([{ empresaId: null, usuarioId: null, plataforma: true }]);
+  });
+
+  it("a aplicação roda em quem recebe pelo SFTP e em quem baixa do SSW web (ADR 0013)", async () => {
+    const banco = new BancoFalso();
+    banco.empresas = [
+      { id: "e1", integracoes: ["sftp"] },
+      { id: "e2", integracoes: ["ssw_web"] },
+      { id: "e3", integracoes: ["ssw_api"] },
+    ];
+    const empresas: unknown[] = [];
+    const despachante = criarDespachante({
+      enfileirar: (_job, dados) => Promise.resolve(void empresas.push(dados.empresaId)),
+    });
+    const contexto: ContextoDoJob = {
+      executar: (fn) => banco.executar({ empresaId: null, usuarioId: null, plataforma: true }, fn),
+      empresaId: null,
+      log,
+      agora: () => new Date("2026-11-10T12:25:00Z"),
+    };
+    await despachante.processar(contexto, { job: "aplicar-ciclos" });
+    expect(empresas).toEqual(["e1", "e2"]);
+    empresas.length = 0;
+    await despachante.processar(contexto, { job: "baixar-relatorios-ssw" });
+    expect(empresas).toEqual(["e2"]);
   });
 });

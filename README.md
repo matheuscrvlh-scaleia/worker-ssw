@@ -1,7 +1,7 @@
 # worker-ssw
 
-Sistema que conversa com o SSW pelo ERP SSW: recebe os relatórios do FTP e o webhook de
-ocorrências, consulta o BI2 e a API do SSW e grava tudo direto no schema `erp` do Postgres do
+Sistema que conversa com o SSW pelo ERP SSW: baixa os relatórios do SSW web (ou os recebe do FTP),
+recebe o webhook de ocorrências, consulta o BI2 e a API do SSW e grava tudo direto no schema `erp` do Postgres do
 ERP. Saiu do monorepo `erp-ssw` pela [ADR 0012 do ERP](docs/adr/0001-origem.md).
 
 ## O que faz
@@ -15,6 +15,13 @@ ERP. Saiu do monorepo `erp-ssw` pela [ADR 0012 do ERP](docs/adr/0001-origem.md).
 - **HTTP interno** `/interno/v1/*` para a API do ERP pedir e acompanhar jobs e fazer as operações
   manuais da tela Admin › Importação SSW: retomar e descartar ciclo, importar relatório ou XML/zip
   à mão, aplicar ou simular, ver, pausar e destravar o FTP (contrato abaixo).
+- **Relatórios do SSW web** (`baixar-relatorios-ssw`, ADR 0013 do ERP): para cada empresa com a
+  integração `ssw_web` ligada, às :00 e :30, entra no SSW web com o Chromium (Playwright) e baixa
+  036, 306, 038 por unidade, 455 e 930 (fila da opção 156) e 050 (impresso convertido em CSV). Os
+  arquivos vão direto à recepção da ingestão (os mesmos nomes do FTP) e o ciclo roda em seguida.
+  Credencial e unidades vêm do cadastro da integração no ERP (`dominio`, `cpf`, `usuario`,
+  `unidade_matriz`, `unidades_038`, `unidades_038_so_com_dados`, `unidades_050`; senha cifrada).
+  Até 2 navegadores ao mesmo tempo no worker-ssw todo.
 - **Jobs BullMQ**: sincronização do FTP (e retroativo), aplicação dos ciclos, BI2 0017, token e
   webhook do SSW, órfãos do XML de CT-e, projeções do Romaneio (por chave e completa), SLA pelos
   arquivos, coletas do 050 e limpeza da ingestão antiga.
@@ -90,6 +97,7 @@ Jobs que se pode pedir (`JOBS_PEDIVEIS`) e os seus `dados`:
 | ----------------------------- | ---------------------------------------------- |
 | `sincronizar-ftp`             | `{ manual? }`                                  |
 | `sincronizar-ftp-retroativo`  | `{}`                                           |
+| `baixar-relatorios-ssw`       | `{}`                                           |
 | `aplicar-ciclos`              | `{}`                                           |
 | `bi2-0017`                    | `{ modo?, data?, lookback? }`                  |
 | `verificar-token-ssw`         | `{ manual? }` (`manual: true` gera token novo) |

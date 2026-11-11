@@ -9,4 +9,5 @@ export * from "./manuais";
 export * from "./manutencao";
 export * from "./portas";
 export * from "./receber";
+export * from "./ssw-web";
 export * from "./xml";

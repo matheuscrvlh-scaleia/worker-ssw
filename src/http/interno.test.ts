@@ -343,6 +343,7 @@ describe("contrato interno x jobs registrados", () => {
     const minimos: Record<JobPedivel, Record<string, unknown>> = {
       "sincronizar-ftp": {},
       "sincronizar-ftp-retroativo": {},
+      "baixar-relatorios-ssw": {},
       "aplicar-ciclos": {},
       "bi2-0017": {},
       "verificar-token-ssw": { manual: true },

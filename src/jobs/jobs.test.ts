@@ -191,7 +191,7 @@ describe("jobs da ingestão por arquivo", () => {
       expect(j.agendamento).toBeNull();
     }
     expect(jobs.map((j) => j.nome)).toEqual(
-      JOBS_DE_INGESTAO.filter((j) => j.integracao === "sftp" || j.integracao === "xml_cte").map(
+      JOBS_DE_INGESTAO.filter((j) => ["sftp", "ssw_web", "xml_cte"].includes(j.integracao)).map(
         (j) => j.job,
       ),
     );

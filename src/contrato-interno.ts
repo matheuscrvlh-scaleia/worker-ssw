@@ -15,6 +15,7 @@ export const PREFIXO_INTERNO = "/interno/v1";
 export const JOBS_PEDIVEIS = [
   "sincronizar-ftp",
   "sincronizar-ftp-retroativo",
+  "baixar-relatorios-ssw",
   "aplicar-ciclos",
   "bi2-0017",
   "verificar-token-ssw",
@@ -35,6 +36,7 @@ export const MAX_CHAVES_DAS_PROJECOES = 50_000;
 export const DADOS_DOS_JOBS = {
   "sincronizar-ftp": z.strictObject({ manual: z.boolean().optional() }),
   "sincronizar-ftp-retroativo": z.strictObject({}),
+  "baixar-relatorios-ssw": z.strictObject({}),
   "aplicar-ciclos": z.strictObject({}),
   "bi2-0017": z.strictObject({
     modo: z.enum(["cron_continuo", "manual"]).optional(),

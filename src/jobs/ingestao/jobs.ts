@@ -4,10 +4,12 @@
  * ligada, só para os jobs em `INGESTAO_JOBS_LIGADOS`); a fila de cada job deduplica por empresa e
  * as travas do Redis seguram o singleton entre disparos (FTP 4 min, ciclo 180 s).
  */
+import { ErroDeNegocio } from "@erp/domain/errors";
 import { filaDoJob } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 
 import {
+  baixarRelatoriosSsw,
   type ClienteSftp,
   type DependenciasDoFtp,
   type Enfileirador,
@@ -23,6 +25,8 @@ import {
   unidadePelo455Recente,
 } from "../../aplicacao/casos-de-uso";
 import { type Cofre, segredoDa } from "../../fontes/comum/integracao";
+import { configuracaoSswWeb } from "../../fontes/ssw-web/parametros";
+import { type NavegadorSswWeb, rodadaSswWeb } from "../../fontes/ssw-web/rodada";
 import { montarConfiguracaoSftp, type SftpDoAmbiente } from "../../infra";
 import { type ContextoDoJob, definirJob } from "../registro";
 import { slaPelosArquivos } from "../sla-arquivos/job";
@@ -38,6 +42,8 @@ export interface ServicosDaIngestao {
   cofre: Cofre;
   /** `SFTP_*` do ambiente: só valem com `parametros.usar_env` (transição da FR). */
   sftpDoAmbiente: SftpDoAmbiente;
+  /** Chromium do SSW web (`baixar-relatorios-ssw`). */
+  sswWeb: NavegadorSswWeb;
   esperar: (ms: number) => Promise<void>;
 }
 
@@ -157,5 +163,29 @@ export function criarJobsDaIngestao(s: ServicosDaIngestao) {
     },
   });
 
-  return [ftp, ftpRetroativo, ciclo, slaArquivos, limpeza, xmlOrfaos];
+  // Relatórios do SSW web direto na ingestão (ADR 0013): a credencial é a da integração `ssw_web`.
+  const sswWeb = definirJob({
+    nome: "baixar-relatorios-ssw",
+    fila: filaDoJob("baixar-relatorios-ssw"),
+    escopo: "empresa",
+    dados: porEmpresa,
+    agendamento: null,
+    async processar(ctx, { empresaId }) {
+      const integracao = await ctx.executar(({ integracoes }) =>
+        integracoes.ler(empresaId, "ssw_web"),
+      );
+      const senha = integracao ? segredoDa(s.cofre, empresaId, "ssw_web", integracao) : null;
+      const lida = configuracaoSswWeb(integracao, senha);
+      if (!lida.ok) throw new ErroDeNegocio("ENTRADA_INVALIDA", lida.mensagem);
+      const r = await baixarRelatoriosSsw({
+        ...dependencias(ctx, empresaId, s),
+        baixar: () => rodadaSswWeb(s.sswWeb, lida.config, ctx.agora()),
+      });
+      if (r.status === "parcial") ctx.log.warn(r, "relatórios do SSW web com falha");
+      else ctx.log.info(r, "relatórios do SSW web");
+      return r;
+    },
+  });
+
+  return [ftp, ftpRetroativo, sswWeb, ciclo, slaArquivos, limpeza, xmlOrfaos];
 }

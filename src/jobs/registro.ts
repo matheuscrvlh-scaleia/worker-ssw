@@ -59,6 +59,9 @@ const UMA_POR_VEZ: ReadonlySet<NomeDoJobDeIngestao> = new Set([
   "processar-webhook-ssw",
 ]);
 
+/** Navegadores do SSW web ao mesmo tempo em todo o worker-ssw (~400 MB cada). */
+const NAVEGADORES_SIMULTANEOS = 2;
+
 /**
  * Filas e a concorrência de cada uma. Fila separada por natureza de trabalho: ingestão pesada não
  * pode atrasar manutenção, e vice-versa. Cada job de ingestão tem a sua (singleton por empresa).
@@ -71,11 +74,17 @@ export const FILAS: readonly DefinicaoDeFila[] = [
   { nome: "projecoes", concorrencia: 2 },
   // 050 de coletas do FTP: um por vez (o mais novo vence pela emissão, a ordem não importa).
   { nome: "coletas", concorrencia: 1 },
-  ...JOBS_DE_INGESTAO.map(({ job }) => ({
-    nome: filaDoJob(job),
-    concorrencia: 1,
-    ...(UMA_POR_VEZ.has(job) ? { concorrenciaGlobal: 1 } : {}),
-  })),
+  ...JOBS_DE_INGESTAO.map(({ job }): DefinicaoDeFila => {
+    if (job === "baixar-relatorios-ssw") {
+      const n = NAVEGADORES_SIMULTANEOS;
+      return { nome: filaDoJob(job), concorrencia: n, concorrenciaGlobal: n };
+    }
+    return {
+      nome: filaDoJob(job),
+      concorrencia: 1,
+      ...(UMA_POR_VEZ.has(job) ? { concorrenciaGlobal: 1 } : {}),
+    };
+  }),
 ];
 
 /** `plataforma`: um job para o sistema todo. `empresa`: um por empresa ativa, no contexto dela. */

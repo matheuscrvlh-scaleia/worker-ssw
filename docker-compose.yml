@@ -17,6 +17,9 @@ services:
       - ./certs:/etc/erp/certs:ro
     depends_on:
       redis: { condition: service_healthy }
+    # Chromium do SSW web: init recolhe os processos filhos; /dev/shm maior evita a aba travar.
+    init: true
+    shm_size: 1gb
     restart: unless-stopped
     # Espera os jobs em andamento terminarem (até 30 s; main.ts).
     stop_grace_period: 40s

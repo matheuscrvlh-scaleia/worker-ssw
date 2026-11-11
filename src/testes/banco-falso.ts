@@ -87,9 +87,11 @@ export class BancoFalso {
       agendamentos: {
         empresasAtivas: () =>
           Promise.resolve(this.empresas.map(({ id }) => ({ id, fuso: "America/Sao_Paulo" }))),
-        empresasComIntegracao: (tipo) =>
+        empresasComIntegracao: (tipos) =>
           Promise.resolve(
-            this.empresas.filter((e) => e.integracoes.includes(tipo)).map(({ id }) => ({ id })),
+            this.empresas
+              .filter((e) => tipos.some((t) => e.integracoes.includes(t)))
+              .map(({ id }) => ({ id })),
           ),
       },
       manutencao: {

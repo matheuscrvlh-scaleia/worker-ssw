@@ -18,6 +18,7 @@ export const TIPOS_INTEGRACAO = [
   "ssw_api",
   "ssw_bi2",
   "ssw_webhook",
+  "ssw_web",
   "ahgora",
   "xml_cte",
   "ingestao_publica",
@@ -107,6 +108,37 @@ export const INFO_DA_INTEGRACAO: Record<TipoIntegracao, InfoDaIntegracao> = {
     segredo: "Segredo do webhook",
     tela: "/admin/ingestao",
     ultimoDado: "Última ocorrência recebida",
+  },
+  ssw_web: {
+    nome: "SSW web (relatórios)",
+    descricao:
+      "Login no sistema do SSW que o worker-ssw usa para baixar os relatórios 036, 038, 050, 306, 455 e 930 a cada 30 min, direto na ingestão.",
+    campos: [
+      { chave: "dominio", rotulo: "Domínio", dica: "Vazio = o domínio SSW da empresa" },
+      { chave: "cpf", rotulo: "CPF do usuário" },
+      { chave: "usuario", rotulo: "Usuário" },
+      { chave: "unidade_matriz", rotulo: "Unidade matriz", dica: "Vazio = MTZ" },
+      {
+        chave: "unidades_038",
+        rotulo: "Unidades do 038",
+        lista: true,
+        dica: "Separe por vírgula. Ex.: ARA, CAP, RIO",
+      },
+      {
+        chave: "unidades_038_so_com_dados",
+        rotulo: "Unidades do 038 só com dados",
+        lista: true,
+        dica: "O arquivo vazio dessas unidades é descartado",
+      },
+      {
+        chave: "unidades_050",
+        rotulo: "Unidades do 050 (coletas)",
+        lista: true,
+        dica: "Vazio = sem 050",
+      },
+    ],
+    segredo: "Senha do SSW",
+    tela: "/admin/ingestao",
   },
   ahgora: {
     nome: "Ahgora (ponto)",

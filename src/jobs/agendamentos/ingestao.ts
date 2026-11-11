@@ -8,6 +8,7 @@ import {
   filaDoJob,
   idDeExecucao,
   type IntegracaoDaIngestao,
+  integracoesDoJob,
   type JobDeIngestao,
   JOBS_DE_INGESTAO,
   type NomeDoJobDeIngestao,
@@ -31,8 +32,10 @@ export interface Enfileirador {
 }
 
 export interface RepositorioDoDespachante {
-  /** Empresas ativas ou em implantação com a integração ligada, na ordem de criação. */
-  empresasComIntegracao(tipo: IntegracaoDaIngestao): Promise<{ id: string }[]>;
+  /**
+   * Empresas ativas ou em implantação com qualquer uma das integrações ligada, na ordem de criação.
+   */
+  empresasComIntegracao(tipos: readonly IntegracaoDaIngestao[]): Promise<{ id: string }[]>;
 }
 
 /**
@@ -77,7 +80,7 @@ export function criarDespachante(enfileirador: Enfileirador) {
       const definicao = JOBS_DE_INGESTAO.find((j) => j.job === job);
       if (definicao === undefined) return { enfileirados: 0 };
       const empresas = await executar(({ agendamentos }) =>
-        agendamentos.empresasComIntegracao(definicao.integracao),
+        agendamentos.empresasComIntegracao(integracoesDoJob(definicao)),
       );
       const alvo = empresasDoDisparo(definicao, empresas, agora());
       for (const { id } of alvo) {

@@ -38,10 +38,11 @@ describe("contrato do HTTP interno", () => {
     expect(erroInterno.parse(EXEMPLOS.erro)).toEqual(EXEMPLOS.erro);
   });
 
-  it("só os jobs da lista do ADR 0012; campo desconhecido é recusado", () => {
+  it("só os jobs da lista dos ADR 0012 e 0013; campo desconhecido é recusado", () => {
     expect(JOBS_PEDIVEIS).toEqual([
       "sincronizar-ftp",
       "sincronizar-ftp-retroativo",
+      "baixar-relatorios-ssw",
       "aplicar-ciclos",
       "bi2-0017",
       "verificar-token-ssw",

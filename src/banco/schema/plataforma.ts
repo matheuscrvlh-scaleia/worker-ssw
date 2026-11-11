@@ -32,6 +32,7 @@ export const TIPOS_INTEGRACAO = [
   "ssw_api",
   "ssw_bi2",
   "ssw_webhook",
+  "ssw_web",
   "ahgora",
   "xml_cte",
   "ingestao_publica",

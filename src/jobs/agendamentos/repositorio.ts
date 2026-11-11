@@ -12,15 +12,15 @@ export function criarRepositorioAgendamentos(tx: Transacao): RepositorioAgendame
         .select({ id: empresas.id, fuso: empresas.fuso })
         .from(empresas)
         .where(inArray(empresas.status, [...STATUS_EM_OPERACAO])),
-    empresasComIntegracao: (tipo) =>
+    empresasComIntegracao: (tipos) =>
       tx
-        .select({ id: empresas.id })
+        .selectDistinct({ id: empresas.id, criadoEm: empresas.criadoEm })
         .from(empresas)
         .innerJoin(empresaIntegracoes, eq(empresaIntegracoes.empresaId, empresas.id))
         .where(
           and(
             inArray(empresas.status, [...STATUS_EM_OPERACAO]),
-            eq(empresaIntegracoes.tipo, tipo),
+            inArray(empresaIntegracoes.tipo, [...tipos]),
             eq(empresaIntegracoes.ativo, true),
           ),
         )

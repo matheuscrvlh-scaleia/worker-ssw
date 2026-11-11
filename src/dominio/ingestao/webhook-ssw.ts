@@ -93,7 +93,18 @@ export function headerContemSegredo(
   const auth = (cabecalho ?? "").trim();
   if (!auth) return false;
   const candidatos = new Set([auth, semAspas(auth), ...extrairTokensAuthorization(auth).tokens]);
-  return [...candidatos].some((c) => c.includes(esperado));
+  let achou = false;
+  for (const c of candidatos) achou = contemEmTempoConstante(c, esperado) || achou;
+  return achou;
+}
+
+/** `texto.includes(esperado)` sem saída antecipada: compara todas as janelas até o fim. */
+function contemEmTempoConstante(texto: string, esperado: string): boolean {
+  let achou = false;
+  for (let i = 0; i + esperado.length <= texto.length; i++) {
+    achou = mesmoSegredo(texto.slice(i, i + esperado.length), esperado) || achou;
+  }
+  return achou;
 }
 
 export type ResultadoDaAutorizacao =

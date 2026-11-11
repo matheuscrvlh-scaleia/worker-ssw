@@ -11,6 +11,10 @@ qualquer coisa. Resumo do que não se negocia:
   README.
 - `src/dominio/`, `src/compartilhado/` e `src/banco/{index,cliente,erros,segredos}.ts` são
   espelhos do erp-ssw: não editar aqui; mudar no ERP e copiar (imports `@erp/*` ficam como lá).
+  Exceção: o que o ERP apagou ao passar a ingestão para cá (ADR 0012) só existe aqui e é
+  deste repositório (ex.: `ingestao/bi2-0017.ts`, `ingestao/webhook-ssw.ts`,
+  `romaneio/projecoes.ts`, dias úteis em `nucleo/prazo.ts`). O que existe nos dois tem de ser
+  idêntico; `diff -r --strip-trailing-cr` só pode mostrar linhas a mais deste lado.
 - Toda rota do HTTP interno exige o token de serviço; rota pública autentica antes de ler o
   corpo. Segredo nunca em código, log ou commit.
 - Testes só com falsos (`src/testes/`): nada contra banco, Redis, SFTP, SSW ou rede.

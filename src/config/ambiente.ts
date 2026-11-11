@@ -27,7 +27,7 @@ const esquema = z.object({
   /** Redis próprio do worker-ssw (filas, travas, token do SSW, limites de taxa). */
   REDIS_URL: z.string().min(1),
   /** Porta única: rotas públicas, HTTP interno, saúde e métricas. */
-  PORTA: z.coerce.number().int().positive().default(3003),
+  PORTA: z.coerce.number().int().positive().default(3000),
   HOST: z.string().default("0.0.0.0"),
   /** Saltos de proxy confiáveis no X-Forwarded-For (o Caddy do ERP = 1). */
   PROXIES_CONFIAVEIS: z.coerce.number().int().min(0).default(1),

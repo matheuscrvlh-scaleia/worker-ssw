@@ -7,10 +7,10 @@
 #
 # Redes:
 #   erp-interna — EXTERNA, criada pelo ERP: o Caddy e a API do ERP chegam ao worker-ssw por ela
-#                 (http://worker-ssw:3003). Sem saída para a internet.
+#                 (http://worker-ssw:3000). Sem saída para a internet.
 #   dados       — worker-ssw ↔ redis. Sem saída para a internet.
 #   saida       — worker-ssw → Postgres (Supabase), SSW e SFTP.
-# Nenhuma porta publicada: quem expõe /api/public/* é o Caddy do ERP.
+# Porta: 3000 no contêiner, publicada no host como 3002 (WORKER_PORTA_HOST).
 
 name: worker-ssw
 
@@ -43,7 +43,7 @@ services:
       DB_MAX_CONEXOES: ${DB_MAX_CONEXOES:-5}
       DB_TIMEOUT_CONSULTA_MS: ${DB_TIMEOUT_CONSULTA_MS:-120000}
       REDIS_URL: redis://:${REDIS_SENHA:?defina REDIS_SENHA no .env}@redis:6379/0
-      PORTA: "3003"
+      PORTA: "3000"
       PROXIES_CONFIAVEIS: ${PROXIES_CONFIAVEIS:-1}
       WORKERS_LIGADOS: ${WORKERS_LIGADOS:-true}
       # Desligados até a virada: o sistema atual ainda faz a ingestão.
@@ -64,6 +64,8 @@ services:
     tmpfs:
       # Arquivos do FTP em trânsito (o 455 tem ~39 MB).
       - /tmp:size=512m
+    ports:
+      - "${WORKER_PORTA_HOST:-3002}:3000"
     networks: [erp-interna, dados, saida]
     depends_on:
       redis: { condition: service_healthy }

@@ -57,7 +57,7 @@ falsos (`src/testes/`).
 | `DB_MAX_CONEXOES`        | `5`                  | Tamanho do pool                                                           |
 | `DB_TIMEOUT_CONSULTA_MS` | `120000`             | `statement_timeout` das consultas                                         |
 | `REDIS_URL`              | —                    | Redis próprio (filas, travas, token do SSW cifrado, limites)              |
-| `PORTA` / `HOST`         | `3003`/`0.0.0.0`     | Porta única: público, interno, saúde e métricas                           |
+| `PORTA` / `HOST`         | `3000`/`0.0.0.0`     | Porta única: público, interno, saúde e métricas                           |
 | `PROXIES_CONFIAVEIS`     | `1`                  | Saltos confiáveis no `X-Forwarded-For` (o Caddy do ERP)                   |
 | `WORKERS_LIGADOS`        | `true`               | Consumidores do BullMQ neste processo                                     |
 | `AGENDAMENTOS_LIGADOS`   | `false`              | Crons; ligar só no ambiente que ingere                                    |

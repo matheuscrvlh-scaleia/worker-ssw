@@ -6,8 +6,8 @@ noutra; o que liga os dois é a rede Docker externa `erp-interna` (ADR 0012 do E
 ## 1. Antes da primeira subida
 
 1. No ERP: criar a rede `erp-interna` (`docker network create --internal erp-interna`) e ligar
-   o Caddy e a API do ERP a ela. O Caddy encaminha `/api/public/*` a `worker-ssw:3003`; a API
-   chama `http://worker-ssw:3003/interno/v1` com `WORKER_SSW_TOKEN`.
+   o Caddy e a API do ERP a ela. O Caddy encaminha `/api/public/*` a `worker-ssw:3000`; a API
+   chama `http://worker-ssw:3000/interno/v1` com `WORKER_SSW_TOKEN`.
 2. No banco: papel `erp_worker` (sem `BYPASSRLS`) com os GRANTs da lista do README. O worker-ssw
    não cria nada no banco; se faltar coluna ou GRANT ele recusa subir e diz qual.
 3. `cp .env.example .env` e preencher (`chmod 600 .env`). `certs/` com a CA do Supabase.

@@ -38,18 +38,18 @@ LABEL org.opencontainers.image.title="worker-ssw" \
       org.opencontainers.image.licenses="UNLICENSED"
 
 ENV NODE_ENV=production \
-    PORTA=3003
+    PORTA=3000
 WORKDIR /app
 COPY package.json ./package.json
 COPY --from=deps-producao /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 
 USER 65532:65532
-EXPOSE 3003
+EXPOSE 3000
 
 # 200 = banco, Redis e consumidores do BullMQ respondendo (src/http/saude.ts).
 HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=3 \
-    CMD ["/nodejs/bin/node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORTA||3003)+'/saude/pronto').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+    CMD ["/nodejs/bin/node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORTA||3000)+'/saude/pronto').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
 
 # Comando da virada (troca só o CMD; o ENTRYPOINT é o node):
 #   docker compose run --rm worker-ssw dist/main.js reconstruir-projecoes --todas

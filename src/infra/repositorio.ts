@@ -594,16 +594,16 @@ export function criarRepositorioIngestao(tx: Transacao, empresaId: string): Repo
     },
 
     async inserirOcorrencias(lista) {
-      let n = 0;
+      const ctes: string[] = [];
       for (const bloco of emBlocos(lista, LOTE_DE_GRAVACAO)) {
         const feitas = await tx
           .insert(ocorrencias)
           .values(bloco.map((o) => ({ empresaId, ...o })))
           .onConflictDoNothing()
-          .returning({ id: ocorrencias.id });
-        n += feitas.length;
+          .returning({ cteId: ocorrencias.cteId });
+        ctes.push(...feitas.map((f) => f.cteId));
       }
-      return n;
+      return ctes;
     },
 
     async apagarOcorrencia(cteId, codigo, dataHora) {

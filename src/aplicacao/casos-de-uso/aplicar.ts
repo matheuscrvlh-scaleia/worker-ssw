@@ -264,7 +264,7 @@ export async function aplicarChaves(
       antigo: null,
       novo: linha,
       fonte: "outra",
-      contexto: { ...cad, ocorrencias: [] },
+      contexto: { ...cad, ocorrencias: [], ocorrenciasMudaram: false },
     });
     if (g.tipo === "descartar") ignorados.push({ chave: p.chave, motivo: g.motivo });
     else novos.push(g.cte);
@@ -329,7 +329,10 @@ export async function aplicarChaves(
       });
     }
   }
-  const totalOcorrencias = await r.inserirOcorrencias(ocorrenciasNovas);
+  const inseridas = await r.inserirOcorrencias(ocorrenciasNovas);
+  const totalOcorrencias = inseridas.length;
+  // CT-e com ocorrência inserida ou apagada: só neles o status atual é refeito (gatilho de hoje).
+  const comOcorrenciaGravada = new Set(inseridas);
 
   // §3.12 Estorno (86): apaga as ocorrências anuladas e refaz a entrega.
   const entregaDoEstorno = new Map<string, Date | null>();
@@ -338,7 +341,11 @@ export async function aplicarChaves(
     if (!cte || !p.temAnulada || emissao === null) continue;
     const ligadas = p.lin930.filter((l) => l.dados.emissao_ctrc === emissao);
     const efeito = efeitoDoEstorno(ligadas, p.anuladas, finalizadores, cte.dataEntregaRealizada);
-    for (const o of efeito.apagar) await r.apagarOcorrencia(cte.id, o.codigo, o.dataHora);
+    for (const o of efeito.apagar) {
+      if ((await r.apagarOcorrencia(cte.id, o.codigo, o.dataHora)) > 0) {
+        comOcorrenciaGravada.add(cte.id);
+      }
+    }
     if (efeito.entrega !== undefined) entregaDoEstorno.set(cte.id, efeito.entrega);
   }
 
@@ -353,6 +360,7 @@ export async function aplicarChaves(
     if (entrega !== undefined) campos.dataEntregaRealizada = entrega;
     const res = await regravarCte(r, cad, cte, campos, ocorrencias.get(cte.id) ?? [], agora, {
       ajustar: (final) => ({ camposSsw: camposSswDoCte(final, p.cand) }),
+      ocorrenciasMudaram: comOcorrenciaGravada.has(cte.id),
     });
     if (res.tipo === "descartado") ignorados.push({ chave: p.chave, motivo: res.motivo });
     if (res.tipo === "gravado" && p.prod) atualizados++;

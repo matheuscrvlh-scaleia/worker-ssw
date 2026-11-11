@@ -131,6 +131,24 @@ describe("aplicação em blocos", () => {
     expect(s.ocorrencias.map((o) => o.codigo)).toEqual([86]);
   });
 
+  it("status atual só é refeito no CT-e que ganhou ocorrência (gatilho de hoje)", async () => {
+    const { s, receber, deps } = montar();
+    const aplicar = async (nome: string, ...linhas: string[]) => {
+      await receber(arquivo930(...linhas), nome);
+      await prepararFila(deps);
+      await aplicarBloco(deps, { dryRun: false, limite: 4000, offset: 0, usuarioId: null });
+    };
+    await aplicar(NOME, linha930("85", "04/11/26", "08:00"));
+    const cte = s.ctes[0];
+    if (!cte) throw new Error("esperava o CT-e criado");
+    cte.statusAtual = "CANCELADO"; // escrito pelo XML de cancelamento
+    // A mesma ocorrência de novo não entra (já existe): o status escrito fica.
+    await aplicar("930_ocorrencias_2026-11-05_1030.csv", linha930("85", "04/11/26", "08:00"));
+    expect(s.ctes[0]?.statusAtual).toBe("CANCELADO");
+    await aplicar("930_ocorrencias_2026-11-05_1100.csv", linha930("99", "04/11/26", "09:00"));
+    expect(s.ctes[0]?.statusAtual).toBe("OCORRENCIA");
+  });
+
   it("fila incremental: só entra chave com linha pendente", async () => {
     const { receber, deps, fila } = montar();
     await receber(arquivo930(linha930("1", "04/11/26", "10:00")));

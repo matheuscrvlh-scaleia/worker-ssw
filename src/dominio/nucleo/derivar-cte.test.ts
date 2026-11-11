@@ -16,6 +16,7 @@ const contexto = (
   filiais: [{ sigla: "CAP", cidade: "CAMPINAS", uf: "SP", propria: true }],
   regrasDePrazo: [],
   config: CONFIGURACAO_PADRAO,
+  ocorrenciasMudaram: true,
   ...extra,
 });
 
@@ -136,6 +137,17 @@ describe("recalcularDerivadosDoCte (§11.3)", () => {
       dataEmbarque: "2026-11-04",
       statusAtual: "ANTIGO",
     });
+  });
+
+  it("status atual só é refeito quando a gravação mexe nas ocorrências (gatilho de hoje)", () => {
+    // XML de cancelamento grava "CANCELADO"; o 455 do dia seguinte não traz ocorrência.
+    const cancelado = cte({ statusAtual: "CANCELADO" });
+    const oc = [ocorrencia(99, "2026-11-05T15:00Z", { descricao: "CTRC BAIXADO/CANCELADO" })];
+    const semOcorrenciaNova = contexto(oc, { ocorrenciasMudaram: false });
+    expect(recalcularDerivadosDoCte(cancelado, semOcorrenciaNova).statusAtual).toBe("CANCELADO");
+    expect(recalcularDerivadosDoCte(cancelado, contexto(oc)).statusAtual).toBe(
+      "CTRC BAIXADO/CANCELADO",
+    );
   });
 });
 

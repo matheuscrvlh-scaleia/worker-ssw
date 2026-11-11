@@ -268,7 +268,8 @@ export interface RepositorioIngestao extends RepositorioCteNucleo {
   /** CT-e que já usa a chave de 44 dígitos (para não repetir chave). */
   cteDaChave(chave: string): Promise<string | null>;
   inserirCodigos(codigos: readonly CodigoNovo[]): Promise<void>;
-  inserirOcorrencias(ocorrencias: readonly OcorrenciaNova[]): Promise<number>;
+  /** Insere sem repetir (CT-e, código, data/hora); devolve o CT-e de cada uma que entrou. */
+  inserirOcorrencias(ocorrencias: readonly OcorrenciaNova[]): Promise<string[]>;
   apagarOcorrencia(cteId: string, codigo: number, dataHora: Date): Promise<number>;
   auditar(evento: EventoDeAuditoriaDaIngestao): Promise<void>;
 

@@ -3,6 +3,31 @@
  * faixa "Integração SSW indisponível" do layout. Especificação: docs/regras/06-ingestao.md §3.18.
  */
 
+/** Endereço da SSW API quando a integração não informa outro. */
+export const URL_PADRAO_DA_SSW_API = "https://ssw.inf.br/api";
+
+/**
+ * Base da SSW API a partir do endereço digitado na integração (`url`): vazio = o padrão; sem
+ * protocolo vira https; só o servidor ganha `/api`; a barra final sai. Nulo = endereço inválido.
+ * Ex.: "tms.ssw.inf.br" → "https://tms.ssw.inf.br/api".
+ */
+export function baseDaSswApi(digitado: string): string | null {
+  const texto = digitado.trim();
+  if (!texto) return URL_PADRAO_DA_SSW_API;
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(texto) && !/^https?:\/\//i.test(texto)) return null;
+  let url: URL;
+  try {
+    url = new URL(/^https?:\/\//i.test(texto) ? texto : `https://${texto}`);
+  } catch {
+    return null;
+  }
+  if (url.search || url.hash || url.username || url.password || !url.hostname.includes(".")) {
+    return null;
+  }
+  const caminho = url.pathname.replace(/\/+$/, "");
+  return `${url.origin}${caminho || "/api"}`;
+}
+
 /** O SSW não informa a validade: hoje vale 4 h a partir da geração. */
 export const TTL_DO_TOKEN_MS = 4 * 60 * 60_000;
 

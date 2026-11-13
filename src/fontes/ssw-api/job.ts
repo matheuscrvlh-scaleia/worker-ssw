@@ -5,6 +5,7 @@
  * Especificação: docs/regras/06-ingestao.md §3.18.
  */
 import {
+  baseDaSswApi,
   normalizarCredenciaisSsw,
   precisaRenovarToken,
   previaDoToken,
@@ -90,8 +91,16 @@ export function criarJobTokenSsw(deps: DependenciasDoTokenSsw) {
           falha(`Falha ao renovar token SSW: ${normalizadas.mensagem}`, null, false),
         );
       }
+      // Endereço da integração (vazio = o padrão; ex.: o provisório tms.ssw.inf.br).
+      const base = baseDaSswApi(parametroTexto(p, "url"));
+      if (base === null) {
+        return registrar(
+          falha("Falha ao renovar token SSW: endereço da SSW API inválido.", null, false),
+        );
+      }
       const gerado = await gerarTokenComNovasTentativas(
         deps.buscar,
+        base,
         normalizadas.credenciais,
         deps.esperar,
       );
@@ -105,7 +114,7 @@ export function criarJobTokenSsw(deps: DependenciasDoTokenSsw) {
         );
       }
       await deps.tokens.gravar(empresaId, gerado.token, agora());
-      const teste = await testarTokenComCep(deps.buscar, gerado.token);
+      const teste = await testarTokenComCep(deps.buscar, base, gerado.token);
       const tokenPrevia = previaDoToken(gerado.token);
       if (!teste.ok) {
         return registrar({

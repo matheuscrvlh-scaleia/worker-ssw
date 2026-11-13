@@ -24,6 +24,20 @@ export const TIPOS_INTEGRACAO = [
 ] as const;
 export type TipoIntegracao = (typeof TIPOS_INTEGRACAO)[number];
 
+/**
+ * Se a integração está funcionando: desligada; ativa (conectou ou trouxe dado nas últimas 24 h);
+ * com falha (a última conexão falhou); sem sinal (ligada, mas nada recente).
+ */
+export const SITUACOES_DA_INTEGRACAO = ["desligada", "ativa", "com_falha", "sem_sinal"] as const;
+export type SituacaoDaIntegracao = (typeof SITUACOES_DA_INTEGRACAO)[number];
+
+export const ROTULO_DA_SITUACAO_DA_INTEGRACAO: Record<SituacaoDaIntegracao, string> = {
+  desligada: "Desligada",
+  ativa: "Ativa",
+  com_falha: "Com falha",
+  sem_sinal: "Sem sinal",
+};
+
 interface InfoDaIntegracao {
   nome: string;
   descricao: string;
@@ -32,6 +46,10 @@ interface InfoDaIntegracao {
   segredo?: string;
   /** Tela que opera essa integração. */
   tela?: string;
+  /** Rótulo do último dado que ela traz (sem ele, a integração só conecta). */
+  ultimoDado?: string;
+  /** Nada registra a atividade dela: a tela não mostra situação, conexão nem dado. */
+  semMonitoramento?: true;
 }
 
 export const INFO_DA_INTEGRACAO: Record<TipoIntegracao, InfoDaIntegracao> = {
@@ -53,6 +71,7 @@ export const INFO_DA_INTEGRACAO: Record<TipoIntegracao, InfoDaIntegracao> = {
     ],
     segredo: "Senha do SFTP",
     tela: "/admin/ingestao",
+    ultimoDado: "Último arquivo recebido",
   },
   ssw_api: {
     nome: "SSW API",
@@ -61,9 +80,15 @@ export const INFO_DA_INTEGRACAO: Record<TipoIntegracao, InfoDaIntegracao> = {
       { chave: "dominio", rotulo: "Domínio" },
       { chave: "usuario", rotulo: "Usuário" },
       { chave: "cnpj_edi", rotulo: "CNPJ EDI" },
+      {
+        chave: "url",
+        rotulo: "Endereço da API",
+        dica: "Vazio = https://ssw.inf.br/api. Para usar outro servidor (ex.: o provisório tms.ssw.inf.br), digite o endereço; sem caminho, o sistema completa com /api.",
+      },
     ],
     segredo: "Senha da SSW API",
     tela: "/admin/ssw-diagnostico",
+    ultimoDado: "Último token gerado",
   },
   ssw_bi2: {
     nome: "SSW BI2",
@@ -71,6 +96,7 @@ export const INFO_DA_INTEGRACAO: Record<TipoIntegracao, InfoDaIntegracao> = {
     campos: [{ chave: "dominio", rotulo: "Domínio", dica: "Ex.: FRT" }],
     segredo: "Token do BI2",
     tela: "/admin/ingestao",
+    ultimoDado: "Última sincronização",
   },
   ssw_webhook: {
     nome: "Webhook SSW",
@@ -80,6 +106,7 @@ export const INFO_DA_INTEGRACAO: Record<TipoIntegracao, InfoDaIntegracao> = {
     ],
     segredo: "Segredo do webhook",
     tela: "/admin/ingestao",
+    ultimoDado: "Última ocorrência recebida",
   },
   ahgora: {
     nome: "Ahgora (ponto)",
@@ -100,6 +127,7 @@ export const INFO_DA_INTEGRACAO: Record<TipoIntegracao, InfoDaIntegracao> = {
       },
     ],
     tela: "/admin/xml-cte",
+    ultimoDado: "Último XML importado",
   },
   ingestao_publica: {
     nome: "Rotas públicas da ingestão",
@@ -107,6 +135,41 @@ export const INFO_DA_INTEGRACAO: Record<TipoIntegracao, InfoDaIntegracao> = {
       "Segredo que quem chama /api/public/ftp-relatorio-import, ssw-ciclo-aplicar e xml-orfaos-retry manda no cabeçalho x-ftp-ingest-secret (ou x-cron-token). Identifica a empresa.",
     campos: [],
     segredo: "Segredo das rotas públicas",
+    semMonitoramento: true,
+  },
+};
+
+/**
+ * Integrações da própria Plataforma (valem para todas as empresas): o que antes ficava no .env da
+ * VPS. O segredo de cada uma vai cifrado com a chave mestra (`SEGREDOS_CHAVES`), que fica no .env.
+ */
+export const TIPOS_INTEGRACAO_PLATAFORMA = ["dominio", "email", "worker_ssw"] as const;
+export type TipoIntegracaoPlataforma = (typeof TIPOS_INTEGRACAO_PLATAFORMA)[number];
+
+export const INFO_DA_INTEGRACAO_PLATAFORMA: Record<TipoIntegracaoPlataforma, InfoDaIntegracao> = {
+  dominio: {
+    nome: "Domínio do sistema",
+    descricao: "Endereço público do ERP: monta os links do convite e do “esqueci minha senha”.",
+    campos: [{ chave: "url", rotulo: "Endereço", dica: "Ex.: https://erp.suaempresa.com.br" }],
+  },
+  email: {
+    nome: "E-mail (Resend)",
+    descricao: "Envio do convite e do “esqueci minha senha” pelo Resend.",
+    campos: [
+      {
+        chave: "remetente",
+        rotulo: "Remetente",
+        dica: "Ex.: Painel Logístico <nao-responda@suaempresa.com.br> (domínio verificado no Resend)",
+      },
+    ],
+    segredo: "Chave da API do Resend",
+  },
+  worker_ssw: {
+    nome: "worker-ssw",
+    descricao:
+      "Endereço do worker-ssw e o token de serviço. Sem eles, as ações das telas de ingestão ficam indisponíveis.",
+    campos: [{ chave: "url", rotulo: "Endereço", dica: "Ex.: https://worker.ssw.scaleia.ai" }],
+    segredo: "Token de serviço",
   },
 };
 

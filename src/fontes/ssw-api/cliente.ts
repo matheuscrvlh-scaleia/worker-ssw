@@ -9,7 +9,6 @@ import {
   type TipoDeFalhaSsw,
 } from "@erp/domain/ingestion/ssw-api";
 
-export const BASE_DA_SSW_API = "https://ssw.inf.br/api";
 const TEMPO_LIMITE_MS = 20_000;
 /** Espera antes da 2ª e da 3ª tentativa quando o SSW está fora. */
 const ESPERAS_MS = [1_000, 3_000];
@@ -62,12 +61,17 @@ export type ResultadoDoToken =
   | { tipo: "falha"; tipoFalha: TipoDeFalhaSsw; status: number | null; mensagem: string };
 
 /**
- * `POST /generateToken {domain, username, password, cnpj_edi}` (nesta ordem). Sucesso = `sucess`
+ * `POST <base>/generateToken {domain, username, password, cnpj_edi}` (nesta ordem). A base vem da
+ * integração (`baseDaSswApi`). Sucesso = `sucess`
  * (sic) ou `success` verdadeiro e token em `token`, `dados` ou `dados.token`.
  * origem: callGenerateToken (src/features/ssw/server/ssw-client.server.ts)
  */
-export async function gerarToken(buscar: Buscar, c: CredenciaisSsw): Promise<ResultadoDoToken> {
-  const r = await chamar(buscar, `${BASE_DA_SSW_API}/generateToken`, {
+export async function gerarToken(
+  buscar: Buscar,
+  base: string,
+  c: CredenciaisSsw,
+): Promise<ResultadoDoToken> {
+  const r = await chamar(buscar, `${base}/generateToken`, {
     method: "POST",
     body: JSON.stringify({
       domain: c.dominio,
@@ -103,27 +107,29 @@ export async function gerarToken(buscar: Buscar, c: CredenciaisSsw): Promise<Res
 /** Até 3 tentativas, só quando o SSW está indisponível (esperas de 1 s e 3 s). */
 export async function gerarTokenComNovasTentativas(
   buscar: Buscar,
+  base: string,
   credenciais: CredenciaisSsw,
   esperar: (ms: number) => Promise<void>,
 ): Promise<ResultadoDoToken> {
-  let resultado = await gerarToken(buscar, credenciais);
+  let resultado = await gerarToken(buscar, base, credenciais);
   for (const espera of ESPERAS_MS) {
     if (resultado.tipo === "ok" || resultado.tipoFalha !== "upstream_unavailable") return resultado;
     await esperar(espera);
-    resultado = await gerarToken(buscar, credenciais);
+    resultado = await gerarToken(buscar, base, credenciais);
   }
   return resultado;
 }
 
 /**
- * Teste do token: `GET /consultaGenerica/consultaCep?idCep=80000000` com o token no header.
+ * Teste do token: `GET <base>/consultaGenerica/consultaCep?idCep=80000000` com o token no header.
  * origem: testarTokenComCep (ssw-test.server.ts)
  */
 export async function testarTokenComCep(
   buscar: Buscar,
+  base: string,
   token: string,
 ): Promise<{ ok: boolean; diagnostico: string; mensagem: string }> {
-  const r = await chamar(buscar, `${BASE_DA_SSW_API}/consultaGenerica/consultaCep?idCep=80000000`, {
+  const r = await chamar(buscar, `${base}/consultaGenerica/consultaCep?idCep=80000000`, {
     method: "GET",
     autorizacao: token,
   });

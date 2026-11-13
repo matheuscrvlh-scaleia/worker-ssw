@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 
 import { lerChavesDeSegredo } from "@erp/db/secrets";
+import { URL_PADRAO_DA_SSW_API } from "@erp/domain/ingestion/ssw-api";
 import { chaveDoTokenSsw } from "@erp/shared/ingestion";
 import { pino } from "pino";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -50,7 +51,10 @@ describe("generateToken", () => {
       status: 200,
       corpo: JSON.stringify({ sucess: true, token: "tok-123" }),
     }));
-    expect(await gerarToken(buscar, CREDENCIAIS)).toEqual({ tipo: "ok", token: "tok-123" });
+    expect(await gerarToken(buscar, URL_PADRAO_DA_SSW_API, CREDENCIAIS)).toEqual({
+      tipo: "ok",
+      token: "tok-123",
+    });
     expect(chamadas[0]?.url).toBe("https://ssw.inf.br/api/generateToken");
     expect(Object.keys(JSON.parse(corpoEnviado(chamadas[0]?.init)) as object)).toEqual([
       "domain",
@@ -65,12 +69,15 @@ describe("generateToken", () => {
       status: 200,
       corpo: JSON.stringify({ success: true, dados: { token: "tok-9" } }),
     }));
-    expect(await gerarToken(dados.buscar, CREDENCIAIS)).toEqual({ tipo: "ok", token: "tok-9" });
+    expect(await gerarToken(dados.buscar, URL_PADRAO_DA_SSW_API, CREDENCIAIS)).toEqual({
+      tipo: "ok",
+      token: "tok-9",
+    });
     const recusa = buscarFalso(() => ({
       status: 200,
       corpo: JSON.stringify({ sucess: false, message: "Usuario/senha invalido" }),
     }));
-    expect(await gerarToken(recusa.buscar, CREDENCIAIS)).toMatchObject({
+    expect(await gerarToken(recusa.buscar, URL_PADRAO_DA_SSW_API, CREDENCIAIS)).toMatchObject({
       tipoFalha: "auth_failed",
       mensagem: "Usuario/senha invalido",
     });
@@ -78,7 +85,7 @@ describe("generateToken", () => {
       status: 200,
       corpo: JSON.stringify({ sucess: false, message: "Cliente sem acesso" }),
     }));
-    expect(await gerarToken(sem.buscar, CREDENCIAIS)).toMatchObject({
+    expect(await gerarToken(sem.buscar, URL_PADRAO_DA_SSW_API, CREDENCIAIS)).toMatchObject({
       tipoFalha: "permission_denied",
     });
   });
@@ -86,10 +93,15 @@ describe("generateToken", () => {
   it("SSW fora: 3 tentativas com esperas de 1 s e 3 s", async () => {
     const { buscar, chamadas } = buscarFalso(() => ({ status: 522, corpo: "error code: 522" }));
     const esperas: number[] = [];
-    const r = await gerarTokenComNovasTentativas(buscar, CREDENCIAIS, (ms) => {
-      esperas.push(ms);
-      return Promise.resolve();
-    });
+    const r = await gerarTokenComNovasTentativas(
+      buscar,
+      URL_PADRAO_DA_SSW_API,
+      CREDENCIAIS,
+      (ms) => {
+        esperas.push(ms);
+        return Promise.resolve();
+      },
+    );
     expect(r).toMatchObject({ tipo: "falha", tipoFalha: "upstream_unavailable" });
     expect(chamadas).toHaveLength(3);
     expect(esperas).toEqual([1_000, 3_000]);
@@ -159,6 +171,31 @@ describe("job verificar-token-ssw", () => {
     expect(await geradoEmDoToken(redis, EMPRESA)).toEqual(agora);
     expect(await geradoEmDoToken(redis, "outra")).toBeNull();
     expect(banco.verificacoes).toMatchObject([{ tipo: "ssw_api", ok: true }]);
+  });
+
+  it("usa o endereço da integração; só o servidor ganha /api; inválido não chama o SSW", async () => {
+    const parametros = { dominio: "frt", usuario: "api", cnpj_edi: "12.345.678/0001-90" };
+    const integracao = (url: string) => ({
+      ativo: true,
+      parametros: { ...parametros, url },
+      segredo: { cifrado: "x", versaoChave: 1 },
+      dominioSswDaEmpresa: "FRT",
+    });
+    banco.integracoes.set("ssw_api", integracao(" tms.ssw.inf.br/ "));
+    const provisorio = rodar(ssw, redisFalso());
+    expect(await provisorio.resultado).toMatchObject({ ok: true, renovado: true });
+    expect(provisorio.chamadas.map((c) => c.url)).toEqual([
+      "https://tms.ssw.inf.br/api/generateToken",
+      "https://tms.ssw.inf.br/api/consultaGenerica/consultaCep?idCep=80000000",
+    ]);
+
+    banco.integracoes.set("ssw_api", integracao("ftp://ssw.inf.br"));
+    const invalido = rodar(ssw, redisFalso());
+    expect(await invalido.resultado).toMatchObject({
+      ok: false,
+      mensagem: "Falha ao renovar token SSW: endereço da SSW API inválido.",
+    });
+    expect(invalido.chamadas).toEqual([]);
   });
 
   it("token com mais de 90 min de validade não é renovado (o manual sempre renova)", async () => {

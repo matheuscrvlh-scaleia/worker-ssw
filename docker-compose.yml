@@ -20,6 +20,9 @@ services:
     # Chromium do SSW web: init recolhe os processos filhos; /dev/shm maior evita a aba travar.
     init: true
     shm_size: 1gb
+    # Proxy do SSW web no host (SSW_WEB_PROXY=socks5://host.docker.internal:...), se houver.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
     # Espera os jobs em andamento terminarem (até 30 s; main.ts).
     stop_grace_period: 40s

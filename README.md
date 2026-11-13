@@ -58,24 +58,25 @@ falsos (`src/testes/`).
 
 ## Variáveis
 
-| Variável                 | Padrão                       | Uso                                                                                       |
-| ------------------------ | ---------------------------- | ----------------------------------------------------------------------------------------- |
-| `DATABASE_URL`           | —                            | Postgres do ERP, papel `erp_worker` (sem `BYPASSRLS`)                                     |
-| `DB_MAX_CONEXOES`        | `5`                          | Tamanho do pool                                                                           |
-| `DB_TIMEOUT_CONSULTA_MS` | `120000`                     | `statement_timeout` das consultas                                                         |
-| `REDIS_URL`              | —                            | Redis próprio (filas, travas, token do SSW cifrado, limites)                              |
-| `PORTA` / `HOST`         | `3000`/`0.0.0.0`             | Porta única: público, interno, saúde e métricas                                           |
-| `PROXIES_CONFIAVEIS`     | `1`                          | Saltos confiáveis no `X-Forwarded-For` (o Caddy do ERP)                                   |
-| `WORKERS_LIGADOS`        | `true`                       | Consumidores do BullMQ neste processo                                                     |
-| `AGENDAMENTOS_LIGADOS`   | `false`                      | Crons; ligar só no ambiente que ingere                                                    |
-| `INGESTAO_JOBS_LIGADOS`  | vazio                        | Jobs que o agendador dispara (`bi2-0017,verificar-token-ssw,...`)                         |
-| `INTERNO_TOKENS`         | vazio                        | Tokens do HTTP interno (`atual,anterior`, 32+ caracteres); vazio = 503                    |
-| `METRICAS_TOKEN`         | —                            | Bearer do `/metrics`; sem ele, `/metrics` não existe                                      |
-| `SEGREDOS_CHAVES`        | —                            | Chaves mestras dos segredos de integração (`1:<base64>,2:...`), as do ERP                 |
-| `SEGREDOS_CHAVE_ATUAL`   | `1`                          | Chave usada para cifrar (token do SSW no Redis)                                           |
-| `SFTP_*`                 | —                            | SFTP só para integração com `parametros.usar_env` (transição da FR)                       |
-| `SSW_WEB_URL`            | `https://sistema.ssw.inf.br` | Endereço do SSW web (`baixar-relatorios-ssw`); ex.: o provisório `https://tms.ssw.inf.br` |
-| `NODE_ENV` / `LOG_NIVEL` | `development`/`info`         | Ambiente e nível do pino                                                                  |
+| Variável                 | Padrão                       | Uso                                                                                                                                                   |
+| ------------------------ | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | —                            | Postgres do ERP, papel `erp_worker` (sem `BYPASSRLS`)                                                                                                 |
+| `DB_MAX_CONEXOES`        | `5`                          | Tamanho do pool                                                                                                                                       |
+| `DB_TIMEOUT_CONSULTA_MS` | `120000`                     | `statement_timeout` das consultas                                                                                                                     |
+| `REDIS_URL`              | —                            | Redis próprio (filas, travas, token do SSW cifrado, limites)                                                                                          |
+| `PORTA` / `HOST`         | `3000`/`0.0.0.0`             | Porta única: público, interno, saúde e métricas                                                                                                       |
+| `PROXIES_CONFIAVEIS`     | `1`                          | Saltos confiáveis no `X-Forwarded-For` (o Caddy do ERP)                                                                                               |
+| `WORKERS_LIGADOS`        | `true`                       | Consumidores do BullMQ neste processo                                                                                                                 |
+| `AGENDAMENTOS_LIGADOS`   | `false`                      | Crons; ligar só no ambiente que ingere                                                                                                                |
+| `INGESTAO_JOBS_LIGADOS`  | vazio                        | Jobs que o agendador dispara (`bi2-0017,verificar-token-ssw,...`)                                                                                     |
+| `INTERNO_TOKENS`         | vazio                        | Tokens do HTTP interno (`atual,anterior`, 32+ caracteres); vazio = 503                                                                                |
+| `METRICAS_TOKEN`         | —                            | Bearer do `/metrics`; sem ele, `/metrics` não existe                                                                                                  |
+| `SEGREDOS_CHAVES`        | —                            | Chaves mestras dos segredos de integração (`1:<base64>,2:...`), as do ERP                                                                             |
+| `SEGREDOS_CHAVE_ATUAL`   | `1`                          | Chave usada para cifrar (token do SSW no Redis)                                                                                                       |
+| `SFTP_*`                 | —                            | SFTP só para integração com `parametros.usar_env` (transição da FR)                                                                                   |
+| `SSW_WEB_URL`            | `https://sistema.ssw.inf.br` | Endereço do SSW web (`baixar-relatorios-ssw`); ex.: o provisório `https://tms.ssw.inf.br`                                                             |
+| `SSW_WEB_PROXY`          | —                            | Proxy só do Chromium do SSW web, quando o SSW recusa o IP da VPS (ex.: WARP da Cloudflare em `socks5://host.docker.internal:40001`; `docs/deploy.md`) |
+| `NODE_ENV` / `LOG_NIVEL` | `development`/`info`         | Ambiente e nível do pino                                                                                                                              |
 
 No compose ainda entra `REDIS_SENHA` (ver `.env.example` e `docs/deploy.md`).
 

@@ -260,11 +260,21 @@ class SessaoChromium implements SessaoSswWeb {
   }
 }
 
-/** `endereco`: base do SSW web, sem barra no fim (`SSW_WEB_URL`). */
-export function criarNavegadorSswWeb(log: Logger, endereco: string): NavegadorSswWeb {
+/**
+ * `endereco`: base do SSW web, sem barra no fim (`SSW_WEB_URL`). `proxy`: saída do Chromium por
+ * outro IP (`SSW_WEB_PROXY`), ou `null` para conexão direta.
+ */
+export function criarNavegadorSswWeb(
+  log: Logger,
+  endereco: string,
+  proxy: string | null,
+): NavegadorSswWeb {
   return {
     async entrar(config) {
-      const navegador = await chromium.launch({ headless: true });
+      const navegador = await chromium.launch({
+        headless: true,
+        ...(proxy ? { proxy: { server: proxy } } : {}),
+      });
       const encerrar = () => navegador.close();
       try {
         // O endereço provisório do SSW (tms) responde 403 a "HeadlessChrome" no user-agent.

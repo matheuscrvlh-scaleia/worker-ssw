@@ -62,6 +62,11 @@ const esquema = z.object({
     .url({ protocol: /^https$/ })
     .transform((u) => u.replace(/\/+$/, ""))
     .default("https://sistema.ssw.inf.br"),
+  /**
+   * Proxy só do Chromium do SSW web (ex.: `socks5://host.docker.internal:40001`, o WARP da
+   * Cloudflare), para quando o SSW não aceita o IP da VPS. Vazio = conexão direta.
+   */
+  SSW_WEB_PROXY: z.string().min(1).optional(),
 });
 
 export type Ambiente = z.output<typeof esquema>;

@@ -152,7 +152,7 @@ const servicosDaIngestao = {
   sftp: criarClienteSftp(),
   cofre,
   sftpDoAmbiente: ambiente,
-  sswWeb: criarNavegadorSswWeb(log, ambiente.SSW_WEB_URL),
+  sswWeb: criarNavegadorSswWeb(log, ambiente.SSW_WEB_URL, ambiente.SSW_WEB_PROXY ?? null),
   esperar: (ms: number) => esperar(ms),
 };
 

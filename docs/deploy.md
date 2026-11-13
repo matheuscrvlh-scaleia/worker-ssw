@@ -64,3 +64,22 @@ Cada processo abre até `DB_MAX_CONEXOES` (padrão 5). No pior caso o worker-ssw
 
 Some isso ao que o ERP já usa (API × réplicas + worker do ERP + migrador) e confira contra o
 limite do pooler do Supabase antes de subir `DB_MAX_CONEXOES`.
+
+## 6. SSW web por outro IP (provisório)
+
+Se o SSW recusar o IP da VPS (403 ou conexão sem resposta em `sistema`/`tms.ssw.inf.br`), o
+Chromium do `baixar-relatorios-ssw` sai pelo WARP da Cloudflare, **em modo proxy** (modo túnel
+desviaria todo o tráfego da VPS, SSH e ERP inclusive):
+
+```bash
+apt-get install cloudflare-warp socat          # repositório pkg.cloudflareclient.com
+warp-cli --accept-tos registration new
+warp-cli --accept-tos mode proxy && warp-cli --accept-tos proxy port 40000
+warp-cli --accept-tos connect                  # SOCKS5 em 127.0.0.1:40000
+# repasse só na rede do Docker (unit warp-ponte-docker): docker0 = 172.17.0.1
+socat TCP-LISTEN:40001,bind=172.17.0.1,reuseaddr,fork TCP:127.0.0.1:40000
+```
+
+No `.env`: `SSW_WEB_PROXY=socks5://host.docker.internal:40001` (o compose mapeia
+`host.docker.internal`). Quando o SSW liberar o IP da VPS, apagar a variável e
+`docker compose up -d`.

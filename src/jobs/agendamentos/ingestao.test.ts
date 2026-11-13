@@ -82,7 +82,7 @@ describe("agendador da ingestão", () => {
     expect(banco.contextos).toEqual([{ empresaId: null, usuarioId: null, plataforma: true }]);
   });
 
-  it("a aplicação roda em quem recebe pelo SFTP e em quem baixa do SSW web (ADR 0013)", async () => {
+  it("a aplicação roda em quem recebe pelo SFTP e em quem baixa do SSW web (ADR 0018)", async () => {
     const banco = new BancoFalso();
     banco.empresas = [
       { id: "e1", integracoes: ["sftp"] },

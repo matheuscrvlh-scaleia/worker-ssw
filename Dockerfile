@@ -5,7 +5,7 @@
 #
 # bun para instalar e empacotar; para rodar, a imagem do Playwright (Node + Chromium com as
 # dependências do sistema), na MESMA versão do playwright-core do package.json: o job
-# baixar-relatorios-ssw abre o SSW web nesse Chromium (ADR 0013 do ERP). Imagens fixadas por digest.
+# baixar-relatorios-ssw abre o SSW web nesse Chromium (ADR 0018 do ERP). Imagens fixadas por digest.
 ARG BUN_IMAGEM=oven/bun:1.4.2-slim@sha256:cb3bbbb08e13a4a2ff400f24c7a2a1d5efa83f6ef8544d52d95a519631e2fc61
 ARG PLAYWRIGHT_IMAGEM=mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
 

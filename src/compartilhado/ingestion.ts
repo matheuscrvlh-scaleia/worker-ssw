@@ -16,7 +16,7 @@ export interface JobDeIngestao {
   integracao: IntegracaoDaIngestao;
   /**
    * Outras integrações com que o job também roda (qualquer uma ligada basta): a aplicação dos
-   * relatórios vale para quem recebe pelo SFTP e para quem baixa do SSW web (ADR 0013).
+   * relatórios vale para quem recebe pelo SFTP e para quem baixa do SSW web (ADR 0018).
    */
   alternativas?: readonly IntegracaoDaIngestao[];
   /** Cron em UTC (os horários de hoje); `null` = só sob demanda. */

@@ -163,7 +163,7 @@ export function criarJobsDaIngestao(s: ServicosDaIngestao) {
     },
   });
 
-  // Relatórios do SSW web direto na ingestão (ADR 0013): a credencial é a da integração `ssw_web`.
+  // Relatórios do SSW web direto na ingestão (ADR 0018): a credencial é a da integração `ssw_web`.
   const sswWeb = definirJob({
     nome: "baixar-relatorios-ssw",
     fila: filaDoJob("baixar-relatorios-ssw"),

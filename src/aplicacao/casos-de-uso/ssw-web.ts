@@ -1,5 +1,5 @@
 /**
- * Job `baixar-relatorios-ssw` (ADR 0013 do ERP): baixa os relatórios da empresa no SSW web e os
+ * Job `baixar-relatorios-ssw` (ADR 0018 do ERP): baixa os relatórios da empresa no SSW web e os
  * entrega à mesma recepção do `sincronizar-ftp` (mesmos nomes, mesmo ciclo), sem SFTP no
  * caminho; depois roda o ciclo de aplicação, como o FTP faz.
  */

@@ -15,7 +15,7 @@ ERP. Saiu do monorepo `erp-ssw` pela [ADR 0012 do ERP](docs/adr/0001-origem.md).
 - **HTTP interno** `/interno/v1/*` para a API do ERP pedir e acompanhar jobs e fazer as operações
   manuais da tela Admin › Importação SSW: retomar e descartar ciclo, importar relatório ou XML/zip
   à mão, aplicar ou simular, ver, pausar e destravar o FTP (contrato abaixo).
-- **Relatórios do SSW web** (`baixar-relatorios-ssw`, ADR 0013 do ERP): para cada empresa com a
+- **Relatórios do SSW web** (`baixar-relatorios-ssw`, ADR 0018 do ERP): para cada empresa com a
   integração `ssw_web` ligada, às :00 e :30, entra no SSW web com o Chromium (Playwright) e baixa
   036, 306, 038 por unidade, 455 e 930 (fila da opção 156) e 050 (impresso convertido em CSV). Os
   arquivos vão direto à recepção da ingestão (os mesmos nomes do FTP) e o ciclo roda em seguida.

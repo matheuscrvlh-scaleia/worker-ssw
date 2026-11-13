@@ -1,5 +1,5 @@
 /**
- * Credencial e opções do SSW web da empresa (`empresa_integracoes` tipo `ssw_web`, ADR 0013 do
+ * Credencial e opções do SSW web da empresa (`empresa_integracoes` tipo `ssw_web`, ADR 0018 do
  * ERP). O cadastro é só no ERP; aqui só se lê. A senha é o segredo cifrado da integração.
  */
 import { type IntegracaoGravada, parametroTexto } from "../comum/integracao";

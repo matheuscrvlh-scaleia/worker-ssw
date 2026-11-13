@@ -36,7 +36,8 @@ export const MAX_CHAVES_DAS_PROJECOES = 50_000;
 export const DADOS_DOS_JOBS = {
   "sincronizar-ftp": z.strictObject({ manual: z.boolean().optional() }),
   "sincronizar-ftp-retroativo": z.strictObject({}),
-  "baixar-relatorios-ssw": z.strictObject({}),
+  /** `dia` (passado): repõe um buraco com os relatórios daquele dia (sem o 038). */
+  "baixar-relatorios-ssw": z.strictObject({ dia: dataIso.optional() }),
   "aplicar-ciclos": z.strictObject({}),
   "bi2-0017": z.strictObject({
     modo: z.enum(["cron_continuo", "manual"]).optional(),

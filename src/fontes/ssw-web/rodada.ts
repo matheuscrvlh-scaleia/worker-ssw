@@ -59,21 +59,33 @@ export function temDadosNo038(bytes: Uint8Array): boolean {
   return texto.split(/\r?\n/).some((l) => l.startsWith("2;"));
 }
 
+/**
+ * `diaRetroativo` (`aaaa-mm-dd`): pede os relatórios desse dia em vez de hoje, com o carimbo
+ * `<dia>_2359` (o do retroativo antigo: nunca colide com a grade :00/:30) e sem o 038, que é a
+ * foto dos pendentes no instante e não um relatório do dia.
+ */
 export async function rodadaSswWeb(
   navegador: NavegadorSswWeb,
   config: ConfiguracaoSswWeb,
   agora: Date,
+  diaRetroativo: string | null = null,
 ): Promise<RodadaSswWeb> {
   const relogio = relogioNoFuso(agora, FUSO_DO_NEGOCIO);
   const dd = (n: number) => String(n).padStart(2, "0");
-  const [ano, mes, dia] = [
-    relogio.getUTCFullYear(),
-    relogio.getUTCMonth() + 1,
-    relogio.getUTCDate(),
-  ];
+  const [ano, mes, dia] = diaRetroativo
+    ? diaRetroativo.split("-").map(Number)
+    : [relogio.getUTCFullYear(), relogio.getUTCMonth() + 1, relogio.getUTCDate()];
+  if (ano === undefined || mes === undefined || dia === undefined) {
+    throw new Error(`Dia retroativo inválido: ${diaRetroativo ?? ""}`);
+  }
   const hoje = `${dd(dia)}${dd(mes)}${dd(ano % 100)}`; // ddmmaa, o formato do SSW
-  const carimbo = `${ano}-${dd(mes)}-${dd(dia)}_${dd(relogio.getUTCHours())}${dd(relogio.getUTCMinutes())}`;
+  const hora = diaRetroativo
+    ? "2359"
+    : `${dd(relogio.getUTCHours())}${dd(relogio.getUTCMinutes())}`;
+  const carimbo = `${ano}-${dd(mes)}-${dd(dia)}_${hora}`;
   const nome = (base: string) => `${base}_${carimbo}.csv`;
+  const unidades038 = diaRetroativo ? [] : config.unidades038;
+  const unidades038SoComDados = diaRetroativo ? [] : config.unidades038SoComDados;
 
   const arquivos: ArquivoBaixado[] = [];
   const falhas: string[] = [];
@@ -107,7 +119,7 @@ export async function rodadaSswWeb(
     await tentar("306", async () => {
       arquivos.push({ nome: nome("306_sswmobile"), bytes: await sessao.baixar306(hoje) });
     });
-    for (const unidade of config.unidades038) {
+    for (const unidade of unidades038) {
       await tentar(`038/${unidade}`, async () => {
         const bytes = await sessao.baixar038(unidade);
         arquivos.push({ nome: nome(`038_pendentes_${unidade}`), bytes });
@@ -128,7 +140,7 @@ export async function rodadaSswWeb(
     }
 
     // Unidades que ainda não operam: o arquivo vazio é descartado (seriam dezenas por dia).
-    for (const unidade of config.unidades038SoComDados) {
+    for (const unidade of unidades038SoComDados) {
       await tentar(`038/${unidade}`, async () => {
         const bytes = await sessao.baixar038(unidade);
         if (temDadosNo038(bytes)) arquivos.push({ nome: nome(`038_pendentes_${unidade}`), bytes });

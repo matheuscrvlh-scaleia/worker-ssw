@@ -168,9 +168,15 @@ export function criarJobsDaIngestao(s: ServicosDaIngestao) {
     nome: "baixar-relatorios-ssw",
     fila: filaDoJob("baixar-relatorios-ssw"),
     escopo: "empresa",
-    dados: porEmpresa,
+    dados: porEmpresa.extend({
+      /** Dia passado (`aaaa-mm-dd`) para repor um buraco; sem ele, os relatórios de hoje. */
+      dia: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
+    }),
     agendamento: null,
-    async processar(ctx, { empresaId }) {
+    async processar(ctx, { empresaId, dia }) {
       const integracao = await ctx.executar(({ integracoes }) =>
         integracoes.ler(empresaId, "ssw_web"),
       );
@@ -179,7 +185,7 @@ export function criarJobsDaIngestao(s: ServicosDaIngestao) {
       if (!lida.ok) throw new ErroDeNegocio("ENTRADA_INVALIDA", lida.mensagem);
       const r = await baixarRelatoriosSsw({
         ...dependencias(ctx, empresaId, s),
-        baixar: () => rodadaSswWeb(s.sswWeb, lida.config, ctx.agora()),
+        baixar: () => rodadaSswWeb(s.sswWeb, lida.config, ctx.agora(), dia ?? null),
       });
       if (r.status === "parcial") ctx.log.warn(r, "relatórios do SSW web com falha");
       else ctx.log.info(r, "relatórios do SSW web");

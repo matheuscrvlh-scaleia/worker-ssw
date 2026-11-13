@@ -79,6 +79,25 @@ describe("rodada no SSW web", () => {
     expect(f.fechada()).toBe(true);
   });
 
+  it("retroativo: pede o dia passado, carimbo <dia>_2359 e sem o 038", async () => {
+    const f = sessaoFalsa();
+    const r = await rodadaSswWeb(f.navegador, config, AGORA, "2026-11-09");
+    expect(f.chamadas).toEqual([
+      "marca",
+      "disparar 455 091126",
+      "disparar 930 091126",
+      "036 091126",
+      "306 091126",
+      "coletar 41 455,930",
+    ]);
+    expect(r.arquivos.map((a) => a.nome)).toEqual([
+      "036_romaneios_2026-11-09_2359.csv",
+      "306_sswmobile_2026-11-09_2359.csv",
+      "455_csv_e_2026-11-09_2359.csv",
+      "930_ocorrencias_2026-11-09_2359.csv",
+    ]);
+  });
+
   it("falha de um relatório não derruba os outros; o que não liberou na fila vira falha", async () => {
     const f = sessaoFalsa(["036 111126", "disparar 930 111126"], []);
     const r = await rodadaSswWeb(f.navegador, config, AGORA);

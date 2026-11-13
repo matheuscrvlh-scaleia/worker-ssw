@@ -273,9 +273,10 @@ export async function aplicarCiclo(
     return { cicloChave: chave, status: "aplicado", motivo: null };
   } catch (e) {
     const motivo = e instanceof Error ? e.message : String(e);
-    await deps.executar((r) =>
-      r.mudarCiclo(chave, { status: "erro", motivo, totais: { ...totais, _fila_pronta: true } }),
-    );
+    // `_fila_pronta` só segue `true` se a preparação terminou (erro no 036 ou num bloco: a fila
+    // já marcou o que foi). Erro na própria preparação deixa a fila vazia: marcá-la pronta faria a
+    // retomada fechar o ciclo como aplicado sem aplicar nada.
+    await deps.executar((r) => r.mudarCiclo(chave, { status: "erro", motivo, totais }));
     return { cicloChave: chave, status: "erro", motivo };
   }
 }

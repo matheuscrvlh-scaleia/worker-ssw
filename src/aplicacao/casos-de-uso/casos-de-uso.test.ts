@@ -191,6 +191,21 @@ describe("ciclo automático", () => {
     expect(s.aplicacoes).toHaveLength(0);
   });
 
+  it("erro na preparação da fila: ciclo em erro sem fila pronta, e a retomada prepara e aplica", async () => {
+    const { s, fila, receber, deps } = montar();
+    await receber(arquivo930(linha930("1", "04/11/26", "10:00")));
+    const substituir = fila.substituir;
+    fila.substituir = () => Promise.reject(new Error("consulta da fila caiu"));
+    const r1 = await rodarCiclos(deps);
+    expect(r1.resultados[0]).toMatchObject({ status: "erro", motivo: "consulta da fila caiu" });
+    expect(s.ciclos.get("2026-11-05_1000")?.totais._fila_pronta).toBeUndefined();
+
+    fila.substituir = substituir;
+    const r2 = await rodarCiclos(deps);
+    expect(r2.resultados[0]).toMatchObject({ status: "aplicado" });
+    expect(s.aplicacoes.length).toBeGreaterThan(0);
+  });
+
   it("descartar apaga as linhas do ciclo e avisa as projeções; ciclo aplicado não descarta", async () => {
     const { s, receber, deps, enfileirador } = montar();
     await receber(arquivo930(linha930("1", "04/11/26", "10:00")));

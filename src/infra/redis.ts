@@ -17,9 +17,10 @@ import {
 const PREFIXO = "erp:ingestao";
 const LOTE = 1000;
 
-export function criarFilaDeAplicacao(redis: Redis): FilaDeAplicacao {
-  const chaveDaFila = (e: string) => `${PREFIXO}:fila:${e}`;
-  const chaveDoControle = (e: string) => `${PREFIXO}:fila-controle:${e}`;
+/** `nome`: `fila` (a principal, dos ciclos) ou `fila-repasse` (a passada completa em segundo plano). */
+export function criarFilaDeAplicacao(redis: Redis, nome = "fila"): FilaDeAplicacao {
+  const chaveDaFila = (e: string) => `${PREFIXO}:${nome}:${e}`;
+  const chaveDoControle = (e: string) => `${PREFIXO}:${nome}-controle:${e}`;
   // Pontuação crescente (ms + posição): a ordem de chegada vira a ordem da fila.
   const pontuados = (chaves: readonly string[]) => {
     const base = Date.now() * 1000;

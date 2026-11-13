@@ -24,7 +24,9 @@ ERP. Saiu do monorepo `erp-ssw` pela [ADR 0012 do ERP](docs/adr/0001-origem.md).
   Até 2 navegadores ao mesmo tempo no worker-ssw todo.
 - **Jobs BullMQ**: sincronização do FTP (e retroativo), aplicação dos ciclos, BI2 0017, token e
   webhook do SSW, órfãos do XML de CT-e, projeções do Romaneio (por chave e completa), SLA pelos
-  arquivos, coletas do 050 e limpeza da ingestão antiga.
+  arquivos, coletas do 050 e limpeza da ingestão antiga. A passada completa da fila de aplicação
+  (a das 03:00) roda em segundo plano (`repassar-fila`, um bloco de 500 por minuto, só com a fila
+  principal vazia), para os dados novos de 30 em 30 min não esperarem por ela.
 - **Saúde**: `/saude/vivo`, `/saude/pronto` (banco, Redis e consumidores) e `/metrics` (Bearer
   `METRICAS_TOKEN`). `/interno/*` e `/metrics` respondem 404 a quem vem pela borda
   (`X-Forwarded-For`).

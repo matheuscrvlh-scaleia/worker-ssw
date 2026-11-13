@@ -11,7 +11,7 @@ import {
 } from "../../testes/falsos";
 import { r036 } from "../../testes/registros";
 import { aplicarBloco, prepararFila } from "./aplicar";
-import { aplicarCiclo, descartarCiclo, rodarCiclos } from "./ciclo";
+import { aplicarCiclo, descartarCiclo, repassarFila, rodarCiclos, travaDoCiclo } from "./ciclo";
 import { decidirEmpresa } from "./empresa";
 import { arquivosEstaveis, escolherArquivos, sincronizarFtp } from "./ftp";
 import { sha256 } from "./linhas";
@@ -204,6 +204,55 @@ describe("ciclo automático", () => {
     const r2 = await rodarCiclos(deps);
     expect(r2.resultados[0]).toMatchObject({ status: "aplicado" });
     expect(s.aplicacoes.length).toBeGreaterThan(0);
+  });
+
+  it("preparação completa automática com repasse: a principal só com o pendente, o repasse com tudo", async () => {
+    const { s, receber, deps } = montar();
+    await receber(arquivo930(linha930("1", "04/11/26", "10:00")));
+    await rodarCiclos(deps);
+    const outro = linha930("1", "04/11/26", "11:00").replace("CAP033214-5", "CAP033215-3");
+    s.agora = new Date(s.agora.getTime() + 60_000);
+    await receber(arquivo930(outro), "930_ocorrencias_2026-11-05_1030.csv");
+    const fila = filaFalsa();
+    const repasse = filaFalsa();
+    const r = await prepararFila({ ...deps, fila, repasse });
+    expect(r.modo).toBe("completa");
+    expect(fila.itens).toEqual(["CAP|33215"]);
+    expect([...repasse.itens].sort()).toEqual(["CAP|33214", "CAP|33215"]);
+    expect((await fila.controle(EMPRESA)).ultimaCompletaEm).toEqual(s.agora);
+  });
+
+  it("repassar-fila: espera a fila principal, aplica um bloco sob a trava do ciclo e não refaz a fila", async () => {
+    const { s, receber, deps, travas, fila } = montar();
+    await receber(arquivo930(linha930("1", "04/11/26", "10:00")));
+    const repasse = filaFalsa();
+    await repasse.acrescentar(EMPRESA, ["CAP|33214"]);
+
+    // Ciclo aberto (arquivo recebido e ainda não aplicado): o repasse espera.
+    expect((await repassarFila({ ...deps, travas, repasse })).status).toBe("aguardando_ciclo");
+    await rodarCiclos(deps);
+    await repasse.acrescentar(EMPRESA, ["CAP|33214"]);
+    s.aplicacoes.length = 0;
+
+    await fila.acrescentar(EMPRESA, ["CAP|99999"]);
+    expect(await repassarFila({ ...deps, travas, repasse })).toMatchObject({
+      status: "aguardando_ciclo",
+      pendentes: 1,
+    });
+    fila.itens = [];
+
+    travas.ocupadas.add(travaDoCiclo(EMPRESA));
+    expect((await repassarFila({ ...deps, travas, repasse })).status).toBe("ja_rodando");
+    travas.ocupadas.clear();
+
+    const r = await repassarFila({ ...deps, travas, repasse });
+    expect(r).toMatchObject({ status: "ok", processados: 1, pendentes: 0 });
+    expect(s.aplicacoes).toHaveLength(1);
+    expect(travas.ocupadas.size).toBe(0);
+
+    expect(await repassarFila({ ...deps, travas, repasse })).toMatchObject({ status: "vazio" });
+    expect(repasse.itens).toEqual([]);
+    expect(fila.itens).toEqual([]);
   });
 
   it("descartar apaga as linhas do ciclo e avisa as projeções; ciclo aplicado não descarta", async () => {

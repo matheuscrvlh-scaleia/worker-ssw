@@ -17,6 +17,7 @@ import {
   LIMITE_PADRAO_DOS_ORFAOS,
   limparIngestao,
   type Progressos,
+  repassarFila,
   reprocessarOrfaos,
   rodarCiclos,
   sincronizarFtp,
@@ -34,6 +35,8 @@ import { slaPelosArquivos } from "../sla-arquivos/job";
 /** O que os jobs da ingestão usam além do banco (Redis, SFTP, cofre, fila de jobs). */
 export interface ServicosDaIngestao {
   fila: FilaDeAplicacao;
+  /** Fila da passada completa em segundo plano (`repassar-fila`). */
+  repasse: FilaDeAplicacao;
   travas: Travas;
   progressos: Progressos;
   /** Jobs de outros domínios (projeções do Romaneio, 050 de Coletas). */
@@ -59,6 +62,7 @@ function dependencias(
     empresaId,
     executar: transacional,
     fila: s.fila,
+    repasse: s.repasse,
     travas: s.travas,
     enfileirador: s.enfileirador,
     agora,
@@ -194,4 +198,24 @@ export function criarJobsDaIngestao(s: ServicosDaIngestao) {
   });
 
   return [ftp, ftpRetroativo, sswWeb, ciclo, slaArquivos, limpeza, xmlOrfaos];
+}
+
+/**
+ * Passada completa da fila em segundo plano (a das 03:00 e repasses): um bloco por minuto, só com
+ * a fila principal vazia, para os dados novos de 30 em 30 min não esperarem por ela. Fora do
+ * catálogo do ERP: é do worker, como as projeções do Romaneio.
+ */
+export function criarJobDoRepasse(s: ServicosDaIngestao) {
+  return definirJob({
+    nome: "repassar-fila",
+    fila: "repasse",
+    escopo: "empresa",
+    dados: porEmpresa,
+    agendamento: "* * * * *",
+    async processar(ctx, { empresaId }) {
+      const r = await repassarFila({ ...dependencias(ctx, empresaId, s), repasse: s.repasse });
+      if (r.processados > 0) ctx.log.info(r, "repasse da fila de aplicação");
+      return r;
+    },
+  });
 }

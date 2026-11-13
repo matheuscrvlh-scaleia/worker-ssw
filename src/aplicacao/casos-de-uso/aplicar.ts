@@ -59,6 +59,12 @@ export interface DependenciasDaAplicacao {
   empresaId: string;
   executar: Transacional;
   fila: FilaDeAplicacao;
+  /**
+   * Fila da passada completa em segundo plano (`repassar-fila`). Com ela, a preparação completa
+   * automática vai para cá e a fila principal recebe só o incremental: os dados novos não esperam
+   * a passada inteira. Sem ela (telas), a completa vai para a fila principal, como antes.
+   */
+  repasse?: FilaDeAplicacao;
   enfileirador: Enfileirador;
   agora: () => Date;
 }
@@ -97,6 +103,16 @@ export async function prepararFila(
   const agora = deps.agora();
   const controle = await deps.fila.controle(deps.empresaId);
   const completa = forcarCompleta || precisaPreparacaoCompleta(agora, controle);
+  if (completa && !forcarCompleta && deps.repasse) {
+    const chaves = await deps.executar((r) => r.todasAsChaves(RELATORIOS_DA_FILA));
+    await deps.repasse.substituir(deps.empresaId, chaves.map(chaveDoCte));
+    const pendentes = await deps.executar((r) =>
+      r.chavesPendentes(RELATORIOS_DA_FILA, Number.MAX_SAFE_INTEGER),
+    );
+    await deps.fila.acrescentar(deps.empresaId, pendentes.map(chaveDoCte));
+    await deps.fila.registrarPreparacao(deps.empresaId, true, agora);
+    return { modo: "completa", enfileirados: pendentes.length };
+  }
   if (completa) {
     const chaves = await deps.executar((r) => r.todasAsChaves(RELATORIOS_DA_FILA));
     await deps.fila.substituir(deps.empresaId, chaves.map(chaveDoCte));

@@ -146,6 +146,7 @@ const cofre = criarCofre(chavesDeSegredo);
 
 const servicosDaIngestao = {
   fila: criarFilaDeAplicacao(redisDosWorkers),
+  repasse: criarFilaDeAplicacao(redisDosWorkers, "fila-repasse"),
   travas: criarTravas(redisDosWorkers),
   progressos: criarProgressos(redisDosWorkers),
   enfileirador: filas,

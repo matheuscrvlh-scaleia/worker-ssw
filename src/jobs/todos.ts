@@ -10,7 +10,7 @@ import {
   type Enfileirador as EnfileiradorDoDespachante,
 } from "./agendamentos/ingestao";
 import { importarColetas050 } from "./coletas/job";
-import { criarJobsDaIngestao, type ServicosDaIngestao } from "./ingestao/jobs";
+import { criarJobDoRepasse, criarJobsDaIngestao, type ServicosDaIngestao } from "./ingestao/jobs";
 import { limparIngestaoSsw } from "./manutencao/job";
 import {
   recalcularProjecoesRomaneio,
@@ -36,6 +36,7 @@ export function criarJobs(s: ServicosDosJobs): readonly DefinicaoDeJob[] {
     criarJobTokenSsw({ buscar: s.buscar, cofre: s.cofre, tokens: s.tokens, esperar: s.esperar }),
     jobWebhookSsw,
     ...criarJobsDaIngestao(s.ingestao),
+    criarJobDoRepasse(s.ingestao),
     limparIngestaoSsw,
     recalcularProjecoesRomaneio,
     reconstruirProjecoesRomaneio,

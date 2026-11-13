@@ -40,7 +40,7 @@ export type ExecutorDoWorker = <T>(
 ) => Promise<T>;
 
 export type NomeDaFila =
-  "manutencao" | "agendador" | "projecoes" | "coletas" | ReturnType<typeof filaDoJob>;
+  "manutencao" | "agendador" | "projecoes" | "coletas" | "repasse" | ReturnType<typeof filaDoJob>;
 
 export interface DefinicaoDeFila {
   nome: NomeDaFila;
@@ -74,6 +74,8 @@ export const FILAS: readonly DefinicaoDeFila[] = [
   { nome: "projecoes", concorrencia: 2 },
   // 050 de coletas do FTP: um por vez (o mais novo vence pela emissão, a ordem não importa).
   { nome: "coletas", concorrencia: 1 },
+  // Passada completa da fila de aplicação em segundo plano: um bloco por vez.
+  { nome: "repasse", concorrencia: 1 },
   ...JOBS_DE_INGESTAO.map(({ job }): DefinicaoDeFila => {
     if (job === "baixar-relatorios-ssw") {
       const n = NAVEGADORES_SIMULTANEOS;

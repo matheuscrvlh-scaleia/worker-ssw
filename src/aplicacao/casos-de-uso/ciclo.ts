@@ -31,6 +31,7 @@ import {
 import { regravarCte } from "./gravar-cte";
 import {
   type CicloRegistrado,
+  type FilaDeAplicacao,
   type LinhaApagada,
   type LinhaDaChave,
   type RepositorioIngestao,
@@ -42,6 +43,8 @@ export const ORCAMENTO_CICLO_MS = 40_000;
 export const ORCAMENTO_RODADA_MS = 60_000;
 export const LEASE_DO_CICLO_MS = 180_000;
 export const travaDoCiclo = (empresaId: string) => `ssw_aplicar_ciclo:${empresaId}`;
+/** Bloco do repasse: pequeno, para o ciclo dos dados novos esperar pouco pela trava. */
+export const BLOCO_DO_REPASSE = 500;
 
 export interface DependenciasDoCiclo extends DependenciasDaAplicacao {
   travas: Travas;
@@ -427,4 +430,37 @@ export async function descartarCiclo(
     });
   }
   return { cicloChave, totalRemovido: porTabela.linhas + porTabela.erros, porTabela };
+}
+
+/**
+ * Job `repassar-fila`: um bloco da passada completa em segundo plano, só sem ciclo aberto e com a
+ * fila principal vazia, e sob a mesma trava do ciclo (nunca junto com a aplicação dos dados
+ * novos). O ciclo aberto conta à parte da trava: num banco longe, o bloco de 4000 do ciclo passa
+ * da validade dela.
+ */
+export async function repassarFila(
+  deps: DependenciasDoCiclo & { repasse: FilaDeAplicacao },
+): Promise<{
+  status: "vazio" | "aguardando_ciclo" | "ja_rodando" | "ok";
+  processados: number;
+  pendentes: number;
+}> {
+  const pendentes = await deps.repasse.contar(deps.empresaId);
+  if (pendentes === 0) return { status: "vazio", processados: 0, pendentes };
+  const cicloAberto = (await deps.executar((r) => r.ciclosAbertos(1))).length > 0;
+  if (cicloAberto || (await deps.fila.contar(deps.empresaId)) > 0) {
+    return { status: "aguardando_ciclo", processados: 0, pendentes };
+  }
+  const token = await deps.travas.adquirir(travaDoCiclo(deps.empresaId), LEASE_DO_CICLO_MS);
+  if (token === null) return { status: "ja_rodando", processados: 0, pendentes };
+  try {
+    // Repasse com chave (checado acima): o aplicarBloco não refaz a fila.
+    const r = await aplicarBloco(
+      { ...deps, fila: deps.repasse },
+      { dryRun: false, limite: BLOCO_DO_REPASSE, offset: 0, usuarioId: null },
+    );
+    return { status: "ok", processados: r.processados, pendentes: r.pendentes };
+  } finally {
+    await deps.travas.liberar(travaDoCiclo(deps.empresaId), token);
+  }
 }

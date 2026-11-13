@@ -13,7 +13,6 @@ import { type BrowserContext, chromium, type Download, type Page } from "playwri
 import { type ConfiguracaoSswWeb } from "./parametros";
 import { type NavegadorSswWeb, type SessaoSswWeb } from "./rodada";
 
-const URL_LOGIN = "https://sistema.ssw.inf.br/bin/ssw0422";
 const ESPERA_DOWNLOAD_MS = 90_000;
 /** Espera máxima pelos relatórios na fila da 156 e o intervalo entre as olhadas. */
 const PRAZO_DA_FILA_MS = 300_000;
@@ -261,15 +260,18 @@ class SessaoChromium implements SessaoSswWeb {
   }
 }
 
-export function criarNavegadorSswWeb(log: Logger): NavegadorSswWeb {
+/** `endereco`: base do SSW web, sem barra no fim (`SSW_WEB_URL`). */
+export function criarNavegadorSswWeb(log: Logger, endereco: string): NavegadorSswWeb {
   return {
     async entrar(config) {
       const navegador = await chromium.launch({ headless: true });
       const encerrar = () => navegador.close();
       try {
-        const context = await navegador.newContext({ acceptDownloads: true });
+        // O endereço provisório do SSW (tms) responde 403 a "HeadlessChrome" no user-agent.
+        const userAgent = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${navegador.version()} Safari/537.36`;
+        const context = await navegador.newContext({ acceptDownloads: true, userAgent });
         const menu = await context.newPage();
-        await menu.goto(URL_LOGIN, { waitUntil: "networkidle" });
+        await menu.goto(`${endereco}/bin/ssw0422`, { waitUntil: "networkidle" });
         await preencher(menu, '[name="f1"]', config.dominio);
         await preencher(menu, '[name="f2"]', config.cpf, { sensivel: true });
         await preencher(menu, '[name="f3"]', config.usuario);

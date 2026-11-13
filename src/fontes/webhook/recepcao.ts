@@ -8,7 +8,7 @@
  */
 import { createHash } from "node:crypto";
 
-import { type SegredoCifrado } from "@erp/db/segredos";
+import { type SegredoCifrado } from "@erp/db/secrets";
 import {
   candidatosDaCredencial,
   cnpjsAceitosDosParametros,
@@ -23,7 +23,7 @@ import {
   respostaSsw2181,
   type RetornoSsw2181,
   statusHttpDoErro,
-} from "@erp/dominio/ingestao/webhook-ssw";
+} from "@erp/domain/ingestion/webhook-ssw";
 
 /** Fila do processamento (o job `processar-webhook-ssw` deste worker). */
 export interface FilaDoWebhook {

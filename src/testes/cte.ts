@@ -1,5 +1,5 @@
 /** CT-e completo (todas as colunas de `ctes`) com valores neutros, para os testes da ingestão. */
-import { cte } from "@erp/dominio/testes/nucleo";
+import { cte } from "@erp/domain/tests/core";
 
 import { type CteDaIngestao, type LinhaGuardada } from "../aplicacao/regras";
 

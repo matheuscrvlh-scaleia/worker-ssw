@@ -8,16 +8,6 @@
 import { randomUUID } from "node:crypto";
 
 import {
-  cnpjsAceitosDosParametros,
-  cnpjTransportadora,
-  cnpjTransportadoraAceito,
-  cteVigente,
-  emissaoDoCteDoWebhook,
-  type EventoSsw2181,
-  lerEventoSsw2181,
-  podeCriarCteDoWebhook,
-} from "@erp/dominio/ingestao/webhook-ssw";
-import {
   cidadeDoComplemento,
   CODIGO_CHEGADA_NA_UNIDADE,
   type CodigoNovo,
@@ -26,8 +16,18 @@ import {
   montarCatalogo,
   prepararOcorrencia,
   type Responsavel,
-} from "@erp/dominio/nucleo";
-import { filaDoJob } from "@erp/shared/ingestao";
+} from "@erp/domain/core";
+import {
+  cnpjsAceitosDosParametros,
+  cnpjTransportadora,
+  cnpjTransportadoraAceito,
+  cteVigente,
+  emissaoDoCteDoWebhook,
+  type EventoSsw2181,
+  lerEventoSsw2181,
+  podeCriarCteDoWebhook,
+} from "@erp/domain/ingestion/webhook-ssw";
+import { filaDoJob } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 
 import {

@@ -12,7 +12,7 @@ import {
   numeroCteDaChave,
   statusDoArquivoXml,
   xmlsDoZip,
-} from "./";
+} from ".";
 
 // CT-e fictício (CNPJs e chaves inventados), na estrutura do SSW1329.
 const CHAVE = "33261199888777000166570010000550011000550010";

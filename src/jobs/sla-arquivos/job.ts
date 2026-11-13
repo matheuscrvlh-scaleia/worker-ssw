@@ -1,13 +1,13 @@
-import { feriadosQueContamNosDiasUteis } from "@erp/dominio/nucleo/prazo";
-import { type DataIso, hojeSp } from "@erp/dominio/nucleo/tempo";
+import { feriadosQueContamNosDiasUteis } from "@erp/domain/core/deadline";
+import { type DataIso, hojeSp } from "@erp/domain/core/time";
 import {
   calcularSlaDoCte,
   type CandidatoSla,
   inicioDoSlaArquivos,
   type SlaCalculado,
-} from "@erp/dominio/performance/sla-arquivos";
-import { ehDataIso } from "@erp/shared/datas";
-import { filaDoJob } from "@erp/shared/ingestao";
+} from "@erp/domain/performance/sla-files";
+import { ehDataIso } from "@erp/shared/dates";
+import { filaDoJob } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 
 import { definirJob } from "../registro";

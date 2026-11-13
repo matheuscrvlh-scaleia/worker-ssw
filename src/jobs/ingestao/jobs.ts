@@ -1,10 +1,10 @@
 /**
  * Handlers dos jobs da ingestão SSW por arquivo (spec 06 §4), com os nomes do catálogo
- * `@erp/shared/ingestao`. Quem agenda é o despachante (uma execução por empresa com a integração
+ * `@erp/shared/ingestion`. Quem agenda é o despachante (uma execução por empresa com a integração
  * ligada, só para os jobs em `INGESTAO_JOBS_LIGADOS`); a fila de cada job deduplica por empresa e
  * as travas do Redis seguram o singleton entre disparos (FTP 4 min, ciclo 180 s).
  */
-import { filaDoJob } from "@erp/shared/ingestao";
+import { filaDoJob } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 
 import {

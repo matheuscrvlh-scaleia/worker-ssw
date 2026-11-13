@@ -3,7 +3,7 @@
  * (24 campos); outra linha não vazia é erro. Datas e horas em São Paulo, sem fuso.
  * origem: src/features/ssw/server/parse-930.server.ts (sistema atual)
  */
-import { type Registro930 } from "@erp/shared/relatorios-ssw";
+import { type Registro930 } from "@erp/shared/ssw-reports";
 
 import { dataBR, limpa, linhasDoArquivo, splitCsv, timestampBR, txt } from "./texto";
 import { type Analise, diferencasDeCabecalho, type ErroDeLeitura, type LinhaLida } from "./tipos";

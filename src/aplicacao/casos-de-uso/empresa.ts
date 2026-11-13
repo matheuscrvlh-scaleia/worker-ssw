@@ -1,4 +1,4 @@
-import { empresaEmOperacao } from "@erp/dominio/empresas";
+import { empresaEmOperacao } from "@erp/domain/companies";
 
 /**
  * Empresa de uma execução da ingestão (rota pública, job): `?empresa=`, `x-empresa` ou corpo.

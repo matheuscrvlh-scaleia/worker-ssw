@@ -1,5 +1,5 @@
 import { type ContextoBanco, erroParaLog } from "@erp/db";
-import { ErroDeNegocio } from "@erp/dominio/erros";
+import { ErroDeNegocio } from "@erp/domain/errors";
 import { z } from "@erp/shared/zod";
 import { UnrecoverableError } from "bullmq";
 import { type Logger } from "pino";

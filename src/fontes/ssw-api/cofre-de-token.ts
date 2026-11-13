@@ -7,8 +7,8 @@ import {
   cifrarSegredo,
   decifrarSegredo,
   type SegredoCifrado,
-} from "@erp/db/segredos";
-import { chaveDoTokenSsw } from "@erp/shared/ingestao";
+} from "@erp/db/secrets";
+import { chaveDoTokenSsw } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 
 const RETENCAO_S = 7 * 24 * 3600;

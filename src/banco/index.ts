@@ -9,5 +9,5 @@ export {
   ehTempoEsgotado,
   ehViolacaoDeUnicidade,
   type Transacao,
-} from "./cliente";
-export { erroParaLog } from "./erros";
+} from "./client";
+export { erroParaLog } from "./errors";

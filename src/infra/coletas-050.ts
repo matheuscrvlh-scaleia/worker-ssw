@@ -4,7 +4,7 @@
  */
 import { type Transacao } from "@erp/db";
 import { coletas } from "@erp/db/schema";
-import { type RepositorioGravacao050 } from "@erp/dominio/coletas/gravacao-050";
+import { type RepositorioGravacao050 } from "@erp/domain/pickups/write-050";
 import { and, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 
 const instante = (iso: string | null) => (iso === null ? null : new Date(iso));

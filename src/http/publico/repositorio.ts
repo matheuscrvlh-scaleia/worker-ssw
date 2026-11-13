@@ -1,6 +1,6 @@
 import { type Transacao } from "@erp/db";
 import { empresaIntegracoes, empresas } from "@erp/db/schema";
-import { type SegredoCifrado } from "@erp/db/segredos";
+import { type SegredoCifrado } from "@erp/db/secrets";
 import { and, eq, isNotNull, sql } from "drizzle-orm";
 
 import { type EmpresaParaIngestao } from "../../aplicacao/casos-de-uso";

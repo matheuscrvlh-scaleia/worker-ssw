@@ -3,7 +3,7 @@
  * a linha de relatório guardada e as conversões de fuso.
  */
 import { type ctes } from "@erp/db/schema";
-import { type CteNucleo } from "@erp/dominio/nucleo";
+import { type CteNucleo } from "@erp/domain/core";
 
 /** Linha de `ctes` com os tipos do núcleo (ex.: `ocorrEfetivaFonte` fechado). */
 export type CteDaIngestao = Omit<typeof ctes.$inferSelect, keyof CteNucleo> & CteNucleo;

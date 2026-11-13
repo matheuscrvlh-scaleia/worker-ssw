@@ -1,4 +1,4 @@
-import { registro455Csv } from "@erp/shared/relatorios-ssw";
+import { registro455Csv } from "@erp/shared/ssw-reports";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -19,7 +19,7 @@ import {
   pareceRelatorio050,
   siglaCtrc,
   unidadeDeLocalizacao,
-} from "./";
+} from ".";
 
 // Amostras anonimizadas (nomes e CNPJs fictícios), no layout real de cada relatório.
 const CAB_930 = CABECALHO_930.join(";");

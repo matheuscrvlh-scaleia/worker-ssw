@@ -2,8 +2,8 @@
  * Leitura do CSV do BI2 0017 (recurso `cliente`, código 17): uma linha por CT-e entregue no dia
  * anterior ao fechamento. Especificação: docs/regras/06-ingestao.md §3.15.
  */
-import { type Linha0017 } from "@erp/dominio/ingestao/bi2-0017";
-import { normalizarNumeroCtrc } from "@erp/dominio/ingestao/webhook-ssw";
+import { type Linha0017 } from "@erp/domain/ingestion/bi2-0017";
+import { normalizarNumeroCtrc } from "@erp/domain/ingestion/webhook-ssw";
 
 import { type CsvDoBi2 } from "./cliente";
 

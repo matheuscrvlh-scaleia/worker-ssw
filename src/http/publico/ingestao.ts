@@ -7,7 +7,7 @@
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 
-import { filaDoJob, idDeExecucao } from "@erp/shared/ingestao";
+import { filaDoJob, idDeExecucao } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 import { type FastifyReply, type FastifyRequest } from "fastify";
 import { type FastifyPluginCallbackZod } from "fastify-type-provider-zod";

@@ -1,7 +1,7 @@
 import { type ContextoBanco } from "@erp/db";
-import { type RepositorioGravacao050 } from "@erp/dominio/coletas/gravacao-050";
-import { type RepositorioProjecoesRomaneio } from "@erp/dominio/romaneio/projecoes";
-import { filaDoJob, JOBS_DE_INGESTAO, type NomeDoJobDeIngestao } from "@erp/shared/ingestao";
+import { type RepositorioProjecoesRomaneio } from "@erp/domain/manifest/projections";
+import { type RepositorioGravacao050 } from "@erp/domain/pickups/write-050";
+import { filaDoJob, JOBS_DE_INGESTAO, type NomeDoJobDeIngestao } from "@erp/shared/ingestion";
 import { type z } from "@erp/shared/zod";
 import { type Logger } from "pino";
 
@@ -106,4 +106,4 @@ export function definirJob<D>(definicao: DefinicaoDeJob<D>): DefinicaoDeJob<D> {
   return definicao;
 }
 
-export { OPCOES_PADRAO_DO_JOB } from "@erp/shared/ingestao";
+export { OPCOES_PADRAO_DO_JOB } from "@erp/shared/ingestion";

@@ -22,7 +22,7 @@ import {
   precisaPreparacaoCompleta,
   ultimo038,
   unidadePelo455,
-} from "./";
+} from ".";
 
 const CHAVE = { sigla: "CAP", numero: "33214" };
 const FINALIZADORES = new Set([1, 18, 67, 12, 36, 61, 77, 92, 93, 94, 99]);

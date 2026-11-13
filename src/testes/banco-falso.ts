@@ -5,15 +5,15 @@
 import { randomUUID } from "node:crypto";
 
 import { type ContextoBanco } from "@erp/db";
-import { chaveDaColeta, type ColetaParaGravar } from "@erp/dominio/coletas/gravacao-050";
 import {
   type CodigoNovo,
   CONFIGURACAO_PADRAO,
   type OcorrenciaDoCte,
   type TrocaDePrevisao,
-} from "@erp/dominio/nucleo";
-import { CATALOGO_FR } from "@erp/dominio/testes/nucleo";
-import { type IntegracaoDaIngestao } from "@erp/shared/ingestao";
+} from "@erp/domain/core";
+import { chaveDaColeta, type ColetaParaGravar } from "@erp/domain/pickups/write-050";
+import { CATALOGO_FR } from "@erp/domain/tests/core";
+import { type IntegracaoDaIngestao } from "@erp/shared/ingestion";
 
 import { type CadastrosDoNucleo, cteEmBranco } from "../aplicacao/casos-de-uso";
 import { type CteDaIngestao } from "../aplicacao/regras";
@@ -22,7 +22,7 @@ import { type IntegracaoGravada, type VerificacaoDaIntegracao } from "../fontes/
 import { type OcorrenciaDoWebhook, type ResultadoDoEvento } from "../fontes/webhook/job";
 import { type LimitesDaIngestaoSsw } from "../jobs/manutencao/job";
 import { type ExecutorDoWorker, type RepositoriosDoWorker } from "../jobs/registro";
-import { estadoFalso, repositorioFalso } from "./";
+import { estadoFalso, repositorioFalso } from ".";
 import { ProjecoesFalsas } from "./projecoes-falsas";
 
 export const EMPRESA = "0b9a2c3e-1d4f-4a5b-8c6d-7e8f9a0b1c2d";

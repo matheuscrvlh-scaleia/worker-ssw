@@ -16,8 +16,8 @@ import {
   type OcorrenciaDoCte,
   prepararGravacaoDoCte,
   prepararOcorrencia,
-} from "@erp/dominio/nucleo";
-import { JOB_PROJECOES_ROMANEIO } from "@erp/shared/ingestao";
+} from "@erp/domain/core";
+import { JOB_PROJECOES_ROMANEIO } from "@erp/shared/ingestion";
 
 import { type Registro038, type Registro455Csv, type Registro930 } from "../../fontes/relatorios";
 import {

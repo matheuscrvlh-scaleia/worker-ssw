@@ -1,4 +1,4 @@
-import { OPCOES_PADRAO_DO_JOB, PREFIXO_DAS_FILAS } from "@erp/shared/ingestao";
+import { OPCOES_PADRAO_DO_JOB, PREFIXO_DAS_FILAS } from "@erp/shared/ingestion";
 import { type Redis } from "ioredis";
 import { describe, expect, it, vi } from "vitest";
 

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
-import { ErroDeNegocio } from "@erp/dominio/erros";
-import { ehJobDeIngestao, JOBS_DE_INGESTAO } from "@erp/shared/ingestao";
+import { ErroDeNegocio } from "@erp/domain/errors";
+import { ehJobDeIngestao, JOBS_DE_INGESTAO } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 import { UnrecoverableError } from "bullmq";
 import { pino } from "pino";

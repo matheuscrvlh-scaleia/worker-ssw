@@ -3,8 +3,8 @@
  * Movido de erp-ssw/apps/api/src/modulos/ingestao/casos-de-uso.ts: a regra é a mesma; muda só que
  * a empresa vem do caminho e quem pediu fica na auditoria do ERP.
  */
-import { ErroDeNegocio } from "@erp/dominio/erros";
-import { JOBS_DE_INGESTAO } from "@erp/shared/ingestao";
+import { ErroDeNegocio } from "@erp/domain/errors";
+import { JOBS_DE_INGESTAO } from "@erp/shared/ingestion";
 
 import {
   type AplicacaoValidada,

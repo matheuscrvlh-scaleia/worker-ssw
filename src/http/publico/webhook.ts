@@ -1,5 +1,5 @@
 import { type ContextoBanco } from "@erp/db";
-import { type ChavesDeSegredo, contextoDoSegredo, decifrarSegredo } from "@erp/db/segredos";
+import { type ChavesDeSegredo, contextoDoSegredo, decifrarSegredo } from "@erp/db/secrets";
 import { type FastifyPluginCallback, type FastifyRequest } from "fastify";
 
 import {

@@ -1,8 +1,8 @@
 import {
   recalcularProjecoesDoRomaneio,
   reconstruirProjecoesDoRomaneio,
-} from "@erp/dominio/romaneio/projecoes";
-import { JOB_PROJECOES_ROMANEIO } from "@erp/shared/ingestao";
+} from "@erp/domain/manifest/projections";
+import { JOB_PROJECOES_ROMANEIO } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 
 import { definirJob } from "../registro";

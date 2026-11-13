@@ -7,8 +7,8 @@ import {
   contextoDoSegredo,
   decifrarSegredo,
   type SegredoCifrado,
-} from "@erp/db/segredos";
-import { type IntegracaoDaIngestao } from "@erp/shared/ingestao";
+} from "@erp/db/secrets";
+import { type IntegracaoDaIngestao } from "@erp/shared/ingestion";
 
 export interface IntegracaoGravada {
   ativo: boolean;

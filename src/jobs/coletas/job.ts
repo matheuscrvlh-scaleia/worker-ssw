@@ -1,6 +1,6 @@
-import { importarRelatorio050 } from "@erp/dominio/coletas/gravacao-050";
-import { ErroDeNegocio } from "@erp/dominio/erros";
-import { JOB_COLETAS_050 } from "@erp/shared/ingestao";
+import { ErroDeNegocio } from "@erp/domain/errors";
+import { importarRelatorio050 } from "@erp/domain/pickups/write-050";
+import { JOB_COLETAS_050 } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 import { UnrecoverableError } from "bullmq";
 

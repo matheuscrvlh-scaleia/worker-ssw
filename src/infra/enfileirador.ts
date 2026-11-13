@@ -2,7 +2,7 @@
  * Filas do BullMQ do worker-ssw (uma `Queue` por fila, reaproveitada por quem produz: rotas
  * públicas, HTTP interno, despachante e os casos de uso que pedem jobs de outros domínios).
  */
-import { OPCOES_PADRAO_DO_JOB, PREFIXO_DAS_FILAS } from "@erp/shared/ingestao";
+import { OPCOES_PADRAO_DO_JOB, PREFIXO_DAS_FILAS } from "@erp/shared/ingestion";
 import { Queue } from "bullmq";
 import { type Redis } from "ioredis";
 

@@ -4,10 +4,10 @@
  * Q38 b (036 direto da staging), Q51 b (descartar apaga todas as linhas do ciclo, 455 CSV junto).
  * origem: ciclo.server.ts, aplicar_036_romaneio, aplicar_partes_455 (sistema atual)
  */
-import { ErroDeNegocio } from "@erp/dominio/erros";
-import { type LinhasDescartadas } from "@erp/dominio/romaneio/projecoes";
-import { JOB_PROJECOES_ROMANEIO } from "@erp/shared/ingestao";
-import { registro036 } from "@erp/shared/relatorios-ssw";
+import { ErroDeNegocio } from "@erp/domain/errors";
+import { type LinhasDescartadas } from "@erp/domain/manifest/projections";
+import { JOB_PROJECOES_ROMANEIO } from "@erp/shared/ingestion";
+import { registro036 } from "@erp/shared/ssw-reports";
 
 import { type Registro036, type Registro455Csv } from "../../fontes/relatorios";
 import {

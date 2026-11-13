@@ -8,7 +8,7 @@ import {
   type MotivoDoDescarte,
   type OcorrenciaDoCte,
   prepararGravacaoDoCte,
-} from "@erp/dominio/nucleo";
+} from "@erp/domain/core";
 
 import { type CamposDoCte, type CteDaIngestao } from "../regras";
 import { type CadastrosDoNucleo, type RepositorioCteNucleo } from "./portas";

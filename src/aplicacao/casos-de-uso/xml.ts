@@ -4,7 +4,7 @@
  * portados (§9).
  * origem: src/features/admin/xml-cte/server/importar.server.ts + orfaos.server.ts (sistema atual)
  */
-import { ErroDeNegocio } from "@erp/dominio/erros";
+import { ErroDeNegocio } from "@erp/domain/errors";
 
 import {
   camposDoXml,

@@ -1,12 +1,12 @@
 import { ehTempoEsgotado } from "@erp/db";
-import { ErroDeNegocio } from "@erp/dominio/erros";
+import { ErroDeNegocio } from "@erp/domain/errors";
 import {
   type CodigoErro,
   type ErroPadrao,
   MENSAGEM_ERRO_INTERNO,
   MENSAGEM_TEMPO_ESGOTADO,
   STATUS_DO_CODIGO,
-} from "@erp/shared/erros";
+} from "@erp/shared/errors";
 import { type FastifyError, type FastifyInstance, type FastifyReply } from "fastify";
 import { hasZodFastifySchemaValidationErrors } from "fastify-type-provider-zod";
 

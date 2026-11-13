@@ -3,7 +3,7 @@
  * Spec 06 §3.5, §3.6.3 e §4.1; Q49 do dono (prazos de retenção).
  * origem: ctrcs_unidade_pelo_455, limpar_staging_038_superadas (sistema atual)
  */
-import { filiaisProprias } from "@erp/dominio/nucleo";
+import { filiaisProprias } from "@erp/domain/core";
 
 import { type Registro455Csv } from "../../fontes/relatorios";
 import { type LinhaGuardada, maisNovaPrimeiro, unidadePelo455 } from "../regras";

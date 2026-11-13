@@ -2,7 +2,7 @@
  * Partes do CT-e pelo 455 (remetente, destinatário, parceiro = expedidor, TDE, setor, chave,
  * placa de coleta, unidade de origem, comprovante), no fim de cada ciclo aplicado. Spec 06 §3.6.2.
  */
-import { formatarCnpjCpf, somenteDigitos } from "@erp/dominio/nucleo";
+import { formatarCnpjCpf, somenteDigitos } from "@erp/domain/core";
 
 import { numero455, type Registro455Csv, texto455 } from "../../fontes/relatorios";
 import { semCodigo, uniaoOrdenada } from "./candidato";

@@ -4,6 +4,7 @@
  * (Q41 do dono: os pausados e o backfill não foram portados).
  * Especificação: docs/regras/06-ingestao.md §3.14, §3.15.
  */
+import { hojeSp } from "@erp/domain/core";
 import {
   datasDoCiclo0017,
   entregaEPrevisaoDoBi2,
@@ -12,10 +13,9 @@ import {
   prazoAjustadoDepoisDaEntrega,
   ultimaPorCte,
   vazioQuandoNaoEncontrado,
-} from "@erp/dominio/ingestao/bi2-0017";
-import { hojeSp } from "@erp/dominio/nucleo";
-import { ehDataIso } from "@erp/shared/datas";
-import { filaDoJob } from "@erp/shared/ingestao";
+} from "@erp/domain/ingestion/bi2-0017";
+import { ehDataIso } from "@erp/shared/dates";
+import { filaDoJob } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 
 import { regravarCte, type RepositorioCteNucleo } from "../../aplicacao/casos-de-uso";

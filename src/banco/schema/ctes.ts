@@ -16,7 +16,7 @@
  *
  * Origem: public.ctrcs, public.ctrc_prazo_historico.
  */
-import { FONTES_DE_PRAZO } from "@erp/shared/dominio/prazo";
+import { FONTES_DE_PRAZO } from "@erp/shared/domain/deadline";
 import { sql } from "drizzle-orm";
 import { bigint, boolean, date, integer, numeric, smallint, text, uuid } from "drizzle-orm/pg-core";
 

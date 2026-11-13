@@ -1,5 +1,5 @@
-import { chaveDoCte } from "@erp/dominio/romaneio/projecoes";
-import { linha036 } from "@erp/dominio/testes/romaneio";
+import { chaveDoCte } from "@erp/domain/manifest/projections";
+import { linha036 } from "@erp/domain/tests/manifest";
 import { pino } from "pino";
 import { describe, expect, it } from "vitest";
 

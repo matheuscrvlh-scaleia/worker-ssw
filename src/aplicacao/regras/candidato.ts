@@ -7,7 +7,7 @@
  * - entrega só com a data (930 sem hora) vira meia-noite de Brasília (Q11/D7), não 00:00 UTC;
  * - previsão do SSW em CT-e com prazo de regra vai para `previsao_ssw_*` (Q19).
  */
-import { CODIGOS_ENTREGA, diaSp, ehFonteDeRegra, inicioDoDiaSp } from "@erp/dominio/nucleo";
+import { CODIGOS_ENTREGA, diaSp, ehFonteDeRegra, inicioDoDiaSp } from "@erp/domain/core";
 
 import {
   codigoOcorrencia,

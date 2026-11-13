@@ -14,12 +14,6 @@ import {
   romaneioViagensCte,
 } from "@erp/db/schema";
 import {
-  linha036De,
-  linha038De,
-  linha306De,
-  linha455De,
-} from "@erp/dominio/romaneio/linhas-de-relatorio";
-import {
   type ChaveCte,
   chaveDoCte,
   type ConferenteDoCte,
@@ -28,7 +22,8 @@ import {
   type RepositorioProjecoesRomaneio,
   type RomaneioAtual,
   type ViagemProjetada,
-} from "@erp/dominio/romaneio/projecoes";
+} from "@erp/domain/manifest/projections";
+import { linha036De, linha038De, linha306De, linha455De } from "@erp/domain/manifest/report-rows";
 import { and, type AnyColumn, asc, inArray, type SQL, sql } from "drizzle-orm";
 
 const RELATORIOS = ["036", "306", "038", "455csv"] as const;

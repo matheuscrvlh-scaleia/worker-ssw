@@ -10,8 +10,8 @@ import {
   previaDoToken,
   tempoRestanteDoToken,
   type TipoDeFalhaSsw,
-} from "@erp/dominio/ingestao/ssw-api";
-import { filaDoJob } from "@erp/shared/ingestao";
+} from "@erp/domain/ingestion/ssw-api";
+import { filaDoJob } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 
 import { definirJob } from "../../jobs/registro";

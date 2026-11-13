@@ -30,12 +30,12 @@
     // Cópias do erp-ssw (README, "Arquivos copiados") com os mesmos imports da origem: o arquivo
     // fica idêntico ao do ERP e a sincronia é um diff. esbuild e vitest leem estes mesmos caminhos.
     "paths": {
-      "@erp/dominio/nucleo": ["./src/dominio/nucleo/index.ts"],
-      "@erp/dominio/*": ["./src/dominio/*"],
+      "@erp/domain/core": ["./src/domain/core/index.ts"],
+      "@erp/domain/*": ["./src/domain/*"],
       "@erp/shared/*": ["./src/compartilhado/*"],
       "@erp/db": ["./src/banco/index.ts"],
       "@erp/db/schema": ["./src/banco/schema/index.ts"],
-      "@erp/db/segredos": ["./src/banco/segredos.ts"]
+      "@erp/db/secrets": ["./src/banco/secrets.ts"]
     }
   },
   "include": ["src", "vitest.config.ts"]

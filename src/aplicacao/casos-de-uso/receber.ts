@@ -5,8 +5,8 @@
  */
 import { randomUUID } from "node:crypto";
 
-import { ErroDeNegocio } from "@erp/dominio/erros";
-import { JOB_COLETAS_050 } from "@erp/shared/ingestao";
+import { ErroDeNegocio } from "@erp/domain/errors";
+import { JOB_COLETAS_050 } from "@erp/shared/ingestion";
 
 import {
   type AnaliseDoRelatorio,

@@ -3,7 +3,7 @@
  * `2` = dado com 17 campos (`split(";")`, sem aspas). Prazo "31/12/2050" = sem prazo definido.
  * origem: src/features/ssw/server/parse-038.server.ts (sistema atual)
  */
-import { type Registro038 } from "@erp/shared/relatorios-ssw";
+import { type Registro038 } from "@erp/shared/ssw-reports";
 
 import { dataBR4, linhasDoArquivo, numPonto, truncar } from "./texto";
 import { type Analise, diferencasDeCabecalho, type ErroDeLeitura, type LinhaLida } from "./tipos";

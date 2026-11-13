@@ -1,6 +1,6 @@
 import { type Transacao } from "@erp/db";
 import { empresaIntegracoes, empresas } from "@erp/db/schema";
-import { STATUS_EM_OPERACAO } from "@erp/dominio/empresas";
+import { STATUS_EM_OPERACAO } from "@erp/domain/companies";
 import { and, asc, eq, inArray } from "drizzle-orm";
 
 import { type RepositorioAgendamentos } from "./agendamentos";

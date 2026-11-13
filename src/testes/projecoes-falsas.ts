@@ -5,7 +5,7 @@ import {
   type ProjecaoDoCte,
   type ProjecoesGravadas,
   type RepositorioProjecoesRomaneio,
-} from "@erp/dominio/romaneio/projecoes";
+} from "@erp/domain/manifest/projections";
 
 /** Projeções em memória: linhas dadas pelo teste; o que é gravado vira o estado lido depois. */
 export class ProjecoesFalsas implements RepositorioProjecoesRomaneio {

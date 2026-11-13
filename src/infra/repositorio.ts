@@ -25,13 +25,13 @@ import {
   xmlCteOrfaos,
   xmlFtpSincronizacoes,
 } from "@erp/db/schema";
-import { configuracoesVigentes } from "@erp/dominio/configuracoes";
 import {
   cnpjsPropriosDaEmpresa,
   lerConfiguracaoDoNucleo,
   montarCatalogo,
   type OcorrenciaDoCte,
-} from "@erp/dominio/nucleo";
+} from "@erp/domain/core";
+import { configuracoesVigentes } from "@erp/domain/settings";
 import { and, asc, count, eq, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
 
 import {

@@ -9,11 +9,11 @@ qualquer coisa. Resumo do que não se negocia:
 - O banco é do ERP: **nunca** criar migration, função, gatilho, view materializada, cron ou
   extensão. Coluna nova usada aqui entra na cópia de `src/banco/schema/` e na lista de GRANTs do
   README.
-- `src/dominio/`, `src/compartilhado/` e `src/banco/{index,cliente,erros,segredos}.ts` são
-  espelhos do erp-ssw: não editar aqui; mudar no ERP e copiar (imports `@erp/*` ficam como lá).
-  Exceção: o que o ERP apagou ao passar a ingestão para cá (ADR 0012) só existe aqui e é
-  deste repositório (ex.: `ingestao/bi2-0017.ts`, `ingestao/webhook-ssw.ts`,
-  `romaneio/projecoes.ts`, dias úteis em `nucleo/prazo.ts`). O que existe nos dois tem de ser
+- `src/domain/`, `src/compartilhado/` e `src/banco/{index,client,errors,secrets}.ts` são
+  espelhos do erp-ssw, com os nomes de arquivo de lá (em inglês): não editar aqui; mudar no ERP e
+  copiar (imports `@erp/*` ficam como lá). Exceção: o que o ERP apagou ao passar a ingestão para
+  cá (ADR 0012) só existe aqui e é deste repositório (ex.: `ingestion/bi2-0017.ts`,
+  `ingestion/webhook-ssw.ts`, `manifest/projections.ts`, dias úteis em `core/deadline.ts`). O que existe nos dois tem de ser
   idêntico; `diff -r --strip-trailing-cr` só pode mostrar linhas a mais deste lado.
 - Toda rota do HTTP interno exige o token de serviço; rota pública autentica antes de ler o
   corpo. Segredo nunca em código, log ou commit.

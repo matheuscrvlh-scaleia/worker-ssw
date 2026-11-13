@@ -1,6 +1,6 @@
 /**
  * Agendador da ingestão por empresa (antes `ingestao_despachar` + pg_cron + pg_net). Cada horário
- * do catálogo (`@erp/shared/ingestao`) vira um agendamento do BullMQ que dispara o despachante; o
+ * do catálogo (`@erp/shared/ingestion`) vira um agendamento do BullMQ que dispara o despachante; o
  * despachante enfileira uma execução por empresa ativa com a integração ligada (os jobs BI2 em
  * rodízio), sem repetir execução que já está na fila. Especificação: docs/regras/06-ingestao.md §4.
  */
@@ -11,7 +11,7 @@ import {
   type JobDeIngestao,
   JOBS_DE_INGESTAO,
   type NomeDoJobDeIngestao,
-} from "@erp/shared/ingestao";
+} from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 
 import { definirJob } from "../registro";

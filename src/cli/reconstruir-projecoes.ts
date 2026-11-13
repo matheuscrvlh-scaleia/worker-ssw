@@ -11,7 +11,7 @@
  * `--origem-url` lê a staging inteira do `public` do sistema atual (só leitura), para não perder as
  * viagens antigas. Grava sempre no `erp`.
  */
-import { reconstruirProjecoesDoRomaneio } from "@erp/dominio/romaneio/projecoes";
+import { reconstruirProjecoesDoRomaneio } from "@erp/domain/manifest/projections";
 import { type Logger } from "pino";
 
 import { TAMANHO_DO_LOTE } from "../jobs/projecoes-romaneio/job";

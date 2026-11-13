@@ -1,5 +1,5 @@
-import { ErroDeNegocio } from "@erp/dominio/erros";
-import { JOBS_DE_INGESTAO } from "@erp/shared/ingestao";
+import { ErroDeNegocio } from "@erp/domain/errors";
+import { JOBS_DE_INGESTAO } from "@erp/shared/ingestion";
 import { type FastifyInstance } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 

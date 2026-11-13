@@ -5,8 +5,8 @@
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 
-import { ErroDeNegocio } from "@erp/dominio/erros";
-import { idDeExecucao } from "@erp/shared/ingestao";
+import { ErroDeNegocio } from "@erp/domain/errors";
+import { idDeExecucao } from "@erp/shared/ingestion";
 import { type FastifyReply, type FastifyRequest } from "fastify";
 import { type FastifyPluginCallbackZod } from "fastify-type-provider-zod";
 

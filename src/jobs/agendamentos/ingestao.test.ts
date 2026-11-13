@@ -1,4 +1,4 @@
-import { JOBS_DE_INGESTAO } from "@erp/shared/ingestao";
+import { JOBS_DE_INGESTAO } from "@erp/shared/ingestion";
 import { pino } from "pino";
 import { describe, expect, it } from "vitest";
 

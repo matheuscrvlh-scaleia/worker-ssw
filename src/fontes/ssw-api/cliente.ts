@@ -7,7 +7,7 @@ import {
   ehIndisponibilidadeSsw,
   tipoDaFalhaSsw,
   type TipoDeFalhaSsw,
-} from "@erp/dominio/ingestao/ssw-api";
+} from "@erp/domain/ingestion/ssw-api";
 
 export const BASE_DA_SSW_API = "https://ssw.inf.br/api";
 const TEMPO_LIMITE_MS = 20_000;

@@ -3,7 +3,7 @@
  * demais = 14 campos. Não altera o CT-e: alimenta a projeção "motorista por CT-e" do Romaneio.
  * origem: src/features/ssw/server/parse-306.server.ts (sistema atual)
  */
-import { type Registro306 } from "@erp/shared/relatorios-ssw";
+import { type Registro306 } from "@erp/shared/ssw-reports";
 
 import { dataBR4, limpa, linhasDoArquivo, txt } from "./texto";
 import { type Analise, diferencasDeCabecalho, type ErroDeLeitura, type LinhaLida } from "./tipos";

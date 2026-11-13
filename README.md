@@ -155,23 +155,30 @@ pelo `information_schema.columns`, que só mostra coluna com privilégio). Por t
 
 ## Arquivos copiados do erp-ssw
 
-**Espelhos** (byte a byte; mudança no ERP é copiada para cá, e a sincronia é um `diff -r`):
+**Espelhos** (byte a byte; mudança no ERP é copiada para cá, e a sincronia é um `diff -r`). Os
+nomes de arquivo e pasta são os do ERP, em inglês (ADR 0017 do ERP):
 
-| Origem (erp-ssw)                                                                                                                                                                       | Destino                                |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| `packages/dominio/src/{nucleo,romaneio,coletas,ingestao,performance,testes}/` (os arquivos usados) e `colecoes.ts`, `configuracoes.ts`, `empresas.ts`, `erros.ts`, `ordem.ts`          | `src/dominio/` (mesmos caminhos)       |
-| `packages/shared/src/` (`acesso/papeis`, `consulta`, `contrato`, `contratos/{coletas,romaneio}`, `datas`, `dominio/prazo`, `erros`, `ingestao`, `plataforma`, `relatorios-ssw`, `zod`) | `src/compartilhado/` (mesmos caminhos) |
-| `packages/db/src/{index,cliente,erros,segredos}.ts`                                                                                                                                    | `src/banco/`                           |
+| Origem (erp-ssw)                                                                                                                                                     | Destino                                                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `apps/api/src/domain/{core,manifest,pickups,ingestion,performance}/` (os arquivos usados) e `collections.ts`, `settings.ts`, `companies.ts`, `errors.ts`, `order.ts` | `src/domain/` (mesmos caminhos)                                  |
+| `apps/api/src/models/common/` (`access/roles`, `query`, `dates`, `domain/deadline`, `errors`, `ingestion`, `platform`, `ssw-reports`, `zod`)                         | `src/compartilhado/` (mesmos caminhos)                           |
+| `apps/api/src/views/contract.ts` e `apps/api/src/views/contracts/{pickups,manifest}.ts`                                                                              | `src/compartilhado/contract.ts` e `src/compartilhado/contracts/` |
+| `apps/api/src/db/{index,client,errors,secrets}.ts`                                                                                                                   | `src/banco/`                                                     |
 
-Única diferença: `src/dominio/nucleo/prazo.test.ts` usa uma lista fixa de feriados de 2026 no
-lugar de `calendario.ts` (que não veio). Os imports `@erp/dominio/*`, `@erp/shared/*` e `@erp/db*`
-continuam iguais aos do ERP e são resolvidos pelo `tsconfig.json` (`paths`) e pelo
-`vitest.config.ts`.
+Só existem aqui (o ERP apagou ao passar a ingestão para cá, ADR 0012): `ingestion/bi2-0017.ts`,
+`ingestion/webhook-ssw.ts`, `manifest/projections.ts`, `core/scope.ts`, `performance/sla-files.ts`,
+`tests/` e os `*.test.ts`. `src/domain/core/deadline.test.ts` usa uma lista fixa de feriados de
+2026 no lugar de `calendar.ts` (que não veio).
 
-**Schema**: `packages/db/src/schema/*.ts` → `src/banco/schema/*.ts`, só as 32 tabelas usadas e só
-as colunas (sem índices, chaves estrangeiras nem policies; quem manda no schema é o ERP).
+Os imports `@erp/domain/*`, `@erp/shared/*` e `@erp/db*` são os mesmos do ERP e são resolvidos pelo
+`tsconfig.json` (`paths`) e pelo `vitest.config.ts`.
 
-**Movidos e adaptados** (com os testes, quando havia):
+**Schema**: `src/banco/schema/*.ts`, só as 32 tabelas usadas e só as colunas (sem índices, chaves
+estrangeiras nem policies; quem manda no schema é o ERP, hoje nas migrations em SQL de
+`apps/api/migrations/`).
+
+**Movidos e adaptados** (com os testes, quando havia; caminhos de origem da época da mudança, antes
+da reorganização do ERP):
 
 | Origem (erp-ssw)                                                                         | Destino                                                      |
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------ |

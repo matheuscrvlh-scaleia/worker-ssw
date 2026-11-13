@@ -3,7 +3,7 @@
  * estorno seguido de nova baixa sai; estorno sem baixa depois deixa o CT-e aberto e sem entrega.
  * Só o 930 é desfeito. Spec 06 §3.12.
  */
-import { CODIGOS_ENTREGA, inicioDoDiaSp } from "@erp/dominio/nucleo";
+import { CODIGOS_ENTREGA, inicioDoDiaSp } from "@erp/domain/core";
 
 import { codigoOcorrencia, type Registro930 } from "../../fontes/relatorios";
 import { instanteSp, type LinhaGuardada, maximo } from "./comum";

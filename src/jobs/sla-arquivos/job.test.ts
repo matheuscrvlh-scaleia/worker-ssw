@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
-import { type CandidatoSla, type SlaCalculado } from "@erp/dominio/performance/sla-arquivos";
-import { JOBS_DE_INGESTAO } from "@erp/shared/ingestao";
+import { type CandidatoSla, type SlaCalculado } from "@erp/domain/performance/sla-files";
+import { JOBS_DE_INGESTAO } from "@erp/shared/ingestion";
 import { pino } from "pino";
 import { describe, expect, it } from "vitest";
 

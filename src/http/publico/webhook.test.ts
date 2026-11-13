@@ -1,7 +1,7 @@
 /** Movido de erp-ssw/apps/api/src/modulos/ingestao-ssw/rotas.test.ts (parte do webhook). */
 import { randomBytes } from "node:crypto";
 
-import { cifrarSegredo, contextoDoSegredo, lerChavesDeSegredo } from "@erp/db/segredos";
+import { cifrarSegredo, contextoDoSegredo, lerChavesDeSegredo } from "@erp/db/secrets";
 import { type FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 

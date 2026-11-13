@@ -7,8 +7,8 @@
 import { setTimeout as esperar } from "node:timers/promises";
 
 import { comContexto, conectarBanco, type ContextoBanco, type Transacao } from "@erp/db";
-import { contextoDoSegredo, decifrarSegredo, lerChavesDeSegredo } from "@erp/db/segredos";
-import { filaDoJob, PREFIXO_DAS_FILAS } from "@erp/shared/ingestao";
+import { contextoDoSegredo, decifrarSegredo, lerChavesDeSegredo } from "@erp/db/secrets";
+import { filaDoJob, PREFIXO_DAS_FILAS } from "@erp/shared/ingestion";
 import { z } from "@erp/shared/zod";
 import { Worker } from "bullmq";
 import { sql } from "drizzle-orm";

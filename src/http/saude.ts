@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
-import { ErroDeNegocio } from "@erp/dominio/erros";
+import { ErroDeNegocio } from "@erp/domain/errors";
 import { type FastifyInstance } from "fastify";
 import { collectDefaultMetrics, Counter, Histogram, Registry } from "prom-client";
 

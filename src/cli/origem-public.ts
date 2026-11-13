@@ -7,8 +7,6 @@
  * 94fc9e6). Só lê: a sessão abre com `default_transaction_read_only = on` e todo SQL daqui é
  * `select`. Nada é gravado no `public`.
  */
-import { type Linha036 } from "@erp/dominio/romaneio/hoje";
-import { linha036De, linha038De, linha306De } from "@erp/dominio/romaneio/linhas-de-relatorio";
 import {
   type ChaveCte,
   chaveDoCte,
@@ -17,7 +15,9 @@ import {
   type Linha455,
   type LinhasDoCte,
   type RepositorioProjecoesRomaneio,
-} from "@erp/dominio/romaneio/projecoes";
+} from "@erp/domain/manifest/projections";
+import { linha036De, linha038De, linha306De } from "@erp/domain/manifest/report-rows";
+import { type Linha036 } from "@erp/domain/manifest/today";
 import { Client } from "pg";
 
 /** Projeto Supabase de produção: só com `--confirmar-producao`. */

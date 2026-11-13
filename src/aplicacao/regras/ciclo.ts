@@ -2,7 +2,7 @@
  * Ciclo de importação ("ciclo" = carimbo `aaaa-mm-dd_hhmm` do nome do arquivo) e a fila de
  * aplicação. Spec 06 §3.11.1 e §3.13.
  */
-import { diaSp, somarDiasCorridos } from "@erp/dominio/nucleo";
+import { diaSp, somarDiasCorridos } from "@erp/domain/core";
 
 export const STATUS_CICLO_ABERTO = [
   "aberto",

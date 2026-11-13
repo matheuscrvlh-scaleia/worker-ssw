@@ -4,7 +4,7 @@
  */
 import { createHash } from "node:crypto";
 
-import { inicioDoDiaSp } from "@erp/dominio/nucleo";
+import { inicioDoDiaSp } from "@erp/domain/core";
 
 import {
   type AnaliseDoRelatorio,

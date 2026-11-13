@@ -1,8 +1,8 @@
 /** Dependências falsas (em memória) para testar os casos de uso sem banco, Redis nem SFTP. */
 import { randomUUID } from "node:crypto";
 
-import { CONFIGURACAO_PADRAO, type OcorrenciaDoCte } from "@erp/dominio/nucleo";
-import { CATALOGO_FR } from "@erp/dominio/testes/nucleo";
+import { CONFIGURACAO_PADRAO, type OcorrenciaDoCte } from "@erp/domain/core";
+import { CATALOGO_FR } from "@erp/domain/tests/core";
 
 import {
   type ArquivoRegistrado,

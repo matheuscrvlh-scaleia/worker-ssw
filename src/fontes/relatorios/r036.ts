@@ -3,7 +3,7 @@
  * 46 colunas); `2` = dado com 47 campos (`split(";")`); outro marcador = erro.
  * origem: src/features/ssw/server/parse-036.server.ts (sistema atual)
  */
-import { type Registro036 } from "@erp/shared/relatorios-ssw";
+import { type Registro036 } from "@erp/shared/ssw-reports";
 
 import { conferirCabecalhoLiteral } from "./r306";
 import { dataBR4, inteiroSemPontos, limpa, linhasDoArquivo, numBR, txt } from "./texto";

@@ -3,7 +3,7 @@
  * Spec 06 §3.1; Q37 a (horário global de produção). O ramo de XML do FTP não é portado (§9).
  * origem: supabase/functions/processar-ftp-xmls/index.ts (sistema atual)
  */
-import { diaSp, somarDiasCorridos } from "@erp/dominio/nucleo";
+import { diaSp, somarDiasCorridos } from "@erp/domain/core";
 
 import { dividirCsv, MAX_PARTE_BYTES, nomeParte } from "../../fontes/relatorios";
 import { mensagemDaSincronizacao, statusDaSincronizacao } from "../regras";

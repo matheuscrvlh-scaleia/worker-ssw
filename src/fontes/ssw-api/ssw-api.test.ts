@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 
-import { lerChavesDeSegredo } from "@erp/db/segredos";
-import { chaveDoTokenSsw } from "@erp/shared/ingestao";
+import { lerChavesDeSegredo } from "@erp/db/secrets";
+import { chaveDoTokenSsw } from "@erp/shared/ingestion";
 import { pino } from "pino";
 import { beforeEach, describe, expect, it } from "vitest";
 

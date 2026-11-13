@@ -11,7 +11,7 @@ import {
   type RegraDePrazo,
   type Responsavel,
   type TrocaDePrevisao,
-} from "@erp/dominio/nucleo";
+} from "@erp/domain/core";
 
 import { type CamposDoCte, type ChaveCte, type CteDaIngestao } from "../regras";
 

@@ -1,7 +1,7 @@
 /**
  * 050 (Relação das Coletas, ssw0157) impresso → CSV, uma linha por coleta. O SSW web só devolve
  * o relatório de impressão (um bloco de texto por coleta, colunas fixas); o CSV é o que o leitor
- * do 050 já lê do FTP (`@erp/dominio/coletas/leitor-050`).
+ * do 050 já lê do FTP (`@erp/domain/pickups/reader-050`).
  * origem: converter_050 e rel_050 do ssw-download (ssw_download.py), medidos em 05/11/2026
  */
 

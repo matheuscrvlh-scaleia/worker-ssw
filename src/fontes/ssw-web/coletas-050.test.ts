@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { lerRelatorio050 } from "@erp/dominio/coletas/leitor-050";
+import { lerRelatorio050 } from "@erp/domain/pickups/reader-050";
 import { describe, expect, it } from "vitest";
 
 import { converterColetas050, csvDasColetas050, juntarColetas } from "./coletas-050";
 
 const impresso = readFileSync(
-  join(__dirname, "../../dominio/coletas/__fixtures__/relatorio-050-amostra.txt"),
+  join(__dirname, "../../domain/pickups/__fixtures__/report-050-sample.txt"),
   "latin1",
 );
 const ref = { ano: 2026, mes: 11, dia: 3 };

@@ -5,7 +5,7 @@
  * processarem enquanto os diretos baixam. Falha de um relatório não derruba os outros.
  * origem: main() do ssw-download (ssw_download.py)
  */
-import { FUSO_DO_NEGOCIO, relogioNoFuso } from "@erp/dominio/nucleo";
+import { FUSO_DO_NEGOCIO, relogioNoFuso } from "@erp/domain/core";
 
 import { converterColetas050, csvDasColetas050, juntarColetas } from "./coletas-050";
 import { type ConfiguracaoSswWeb } from "./parametros";

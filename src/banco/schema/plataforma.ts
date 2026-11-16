@@ -64,6 +64,15 @@ export const empresaIntegracoes = erp.table("empresa_integracoes", {
   atualizadoPor: uuid("atualizado_por"),
 });
 
+/**
+ * Integrações da Plataforma (ERP › Plataforma › Configurações › Integrações). O worker lê só a
+ * linha `ssw` (endereço do SSW web) e só `tipo` e `parametros`: o segredo não tem GRANT.
+ */
+export const plataformaIntegracoes = erp.table("plataforma_integracoes", {
+  tipo: text("tipo").primaryKey(),
+  parametros: jsonb("parametros").$type<Record<string, unknown>>().notNull().default({}),
+});
+
 /** Configuração por empresa; `empresa_id` nulo = valor da plataforma (padrão de todas). */
 export const configuracoes = erp.table("configuracoes", {
   id: uuid("id").primaryKey().defaultRandom(),

@@ -76,7 +76,7 @@ falsos (`src/testes/`).
 | `SEGREDOS_CHAVES`        | —                            | Chaves mestras dos segredos de integração (`1:<base64>,2:...`), as do ERP                                                                             |
 | `SEGREDOS_CHAVE_ATUAL`   | `1`                          | Chave usada para cifrar (token do SSW no Redis)                                                                                                       |
 | `SFTP_*`                 | —                            | SFTP só para integração com `parametros.usar_env` (transição da FR)                                                                                   |
-| `SSW_WEB_URL`            | `https://sistema.ssw.inf.br` | Endereço do SSW web (`baixar-relatorios-ssw`); ex.: o provisório `https://tms.ssw.inf.br`                                                             |
+| `SSW_WEB_URL`            | `https://sistema.ssw.inf.br` | Endereço do SSW web quando o ERP não tem um (Plataforma › Configurações › Integrações › SSW vale primeiro)                                            |
 | `SSW_WEB_PROXY`          | —                            | Proxy só do Chromium do SSW web, quando o SSW recusa o IP da VPS (ex.: WARP da Cloudflare em `socks5://host.docker.internal:40001`; `docs/deploy.md`) |
 | `NODE_ENV` / `LOG_NIVEL` | `development`/`info`         | Ambiente e nível do pino                                                                                                                              |
 
@@ -151,6 +151,7 @@ pelo `information_schema.columns`, que só mostra coluna com privilégio). Por t
 | Privilégios                           | Tabelas                                                                                                                                                                                  |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SELECT`                              | `empresas`, `filiais`, `filiais_apelidos`, `prazos_configurados`, `feriados`, `ingestao_relatorios_esperados`                                                                            |
+| `SELECT` de colunas                   | `plataforma_integracoes`: `(tipo, parametros)`, só a linha `ssw` (policy; migration 0020 do ERP)                                                                                         |
 | `SELECT`, `UPDATE` de colunas         | `empresa_integracoes`: `UPDATE (ultimo_teste_em, ultimo_teste_ok, ultimo_teste_msg)`                                                                                                     |
 | `SELECT, INSERT`, `UPDATE` de colunas | `configuracoes` (pausa do FTP): `UPDATE (valor, atualizado_em, atualizado_por)`                                                                                                          |
 | `INSERT`                              | `auditoria`, `cte_prazo_historico`                                                                                                                                                       |

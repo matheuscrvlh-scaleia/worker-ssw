@@ -26,6 +26,7 @@ import { exigirEmpresa } from "./fontes/comum/empresa";
 import { criarCofre } from "./fontes/comum/integracao";
 import { criarRepositorioIntegracoes } from "./fontes/comum/repositorio-integracoes";
 import { criarCofreDeToken, geradoEmDoToken } from "./fontes/ssw-api/cofre-de-token";
+import { enderecoDoSswWeb, lerParametrosDoSsw } from "./fontes/ssw-web/endereco";
 import { criarNavegadorSswWeb } from "./fontes/ssw-web/navegador";
 import { criarRepositorioWebhook } from "./fontes/webhook/repositorio";
 import { criarRepositorioRecepcaoWebhook } from "./fontes/webhook/repositorio-recepcao";
@@ -153,7 +154,15 @@ const servicosDaIngestao = {
   sftp: criarClienteSftp(),
   cofre,
   sftpDoAmbiente: ambiente,
-  sswWeb: criarNavegadorSswWeb(log, ambiente.SSW_WEB_URL, ambiente.SSW_WEB_PROXY ?? null),
+  sswWeb: criarNavegadorSswWeb(
+    log,
+    async () =>
+      enderecoDoSswWeb(
+        await comContexto(conexao.banco, PLATAFORMA, lerParametrosDoSsw),
+        ambiente.SSW_WEB_URL,
+      ),
+    ambiente.SSW_WEB_PROXY ?? null,
+  ),
   esperar: (ms: number) => esperar(ms),
 };
 

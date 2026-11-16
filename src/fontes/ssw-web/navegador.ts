@@ -261,16 +261,17 @@ class SessaoChromium implements SessaoSswWeb {
 }
 
 /**
- * `endereco`: base do SSW web, sem barra no fim (`SSW_WEB_URL`). `proxy`: saída do Chromium por
- * outro IP (`SSW_WEB_PROXY`), ou `null` para conexão direta.
+ * `endereco`: base do SSW web, sem barra no fim, lida a cada login (ver `./endereco`). `proxy`:
+ * saída do Chromium por outro IP (`SSW_WEB_PROXY`), ou `null` para conexão direta.
  */
 export function criarNavegadorSswWeb(
   log: Logger,
-  endereco: string,
+  endereco: () => Promise<string>,
   proxy: string | null,
 ): NavegadorSswWeb {
   return {
     async entrar(config) {
+      const base = await endereco();
       const navegador = await chromium.launch({
         headless: true,
         ...(proxy ? { proxy: { server: proxy } } : {}),
@@ -281,7 +282,7 @@ export function criarNavegadorSswWeb(
         const userAgent = `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${navegador.version()} Safari/537.36`;
         const context = await navegador.newContext({ acceptDownloads: true, userAgent });
         const menu = await context.newPage();
-        await menu.goto(`${endereco}/bin/ssw0422`, { waitUntil: "networkidle" });
+        await menu.goto(`${base}/bin/ssw0422`, { waitUntil: "networkidle" });
         await preencher(menu, '[name="f1"]', config.dominio);
         await preencher(menu, '[name="f2"]', config.cpf, { sensivel: true });
         await preencher(menu, '[name="f3"]', config.usuario);

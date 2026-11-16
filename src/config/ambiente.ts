@@ -57,7 +57,10 @@ const esquema = z.object({
   SFTP_SENHA: z.string().optional(),
   /** Impressão SHA-256 da chave do servidor (`SHA256:…`); sem ela o SFTP não conecta. */
   SFTP_IMPRESSAO_DIGITAL: z.string().optional(),
-  /** Endereço do SSW web (`baixar-relatorios-ssw`); troca para o provisório sem deploy de código. */
+  /**
+   * Endereço do SSW web (`baixar-relatorios-ssw`) quando a Plataforma não tem um: o de
+   * Plataforma › Configurações › Integrações › SSW no ERP vale primeiro.
+   */
   SSW_WEB_URL: z
     .url({ protocol: /^https$/ })
     .transform((u) => u.replace(/\/+$/, ""))

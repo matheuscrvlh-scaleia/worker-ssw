@@ -70,6 +70,7 @@ export function idDeDeduplicacao(
   if (job === "projecoes-romaneio" || job === "projecoes-romaneio-completa") {
     return `${job}__${empresaId}`;
   }
+  if (job === "testar-conexao") return `${job}__${empresaId}__${String(dados["integracao"])}`;
   return idDeExecucao(job, empresaId);
 }
 

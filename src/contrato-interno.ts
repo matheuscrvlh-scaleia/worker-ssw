@@ -23,6 +23,7 @@ export const JOBS_PEDIVEIS = [
   "reprocessar-xml-orfaos",
   "projecoes-romaneio",
   "projecoes-romaneio-completa",
+  "testar-conexao",
 ] as const;
 
 export type JobPedivel = (typeof JOBS_PEDIVEIS)[number];
@@ -57,7 +58,13 @@ export const DADOS_DOS_JOBS = {
     chaves: z.array(chaveDoCte).min(1).max(MAX_CHAVES_DAS_PROJECOES),
   }),
   "projecoes-romaneio-completa": z.strictObject({}),
+  /** Botão "Testar conexão" (Plataforma › Empresa › Integrações): login no SSW web ou o BI2. */
+  "testar-conexao": z.strictObject({ integracao: z.enum(["ssw_web", "ssw_bi2"]) }),
 } as const satisfies Record<JobPedivel, z.ZodType>;
+
+/** O que o `testar-conexao` devolve (`resultado` da execução concluída). */
+export const resultadoDoTesteDeConexao = z.object({ ok: z.boolean(), mensagem: z.string() });
+export type ResultadoDoTesteDeConexao = z.infer<typeof resultadoDoTesteDeConexao>;
 
 /** POST `/interno/v1/empresas/:empresaId/execucoes` */
 export const parametrosDaEmpresa = z.object({ empresaId: z.uuid() });

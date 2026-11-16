@@ -50,6 +50,7 @@ describe("contrato do HTTP interno", () => {
       "reprocessar-xml-orfaos",
       "projecoes-romaneio",
       "projecoes-romaneio-completa",
+      "testar-conexao",
     ]);
     expect(pedidoDeExecucao.safeParse({ job: "sla-arquivos" }).success).toBe(false);
     expect(pedidoDeExecucao.safeParse({ ...EXEMPLOS.pedido, prioridade: 1 }).success).toBe(false);

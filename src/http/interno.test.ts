@@ -351,6 +351,7 @@ describe("contrato interno x jobs registrados", () => {
       "reprocessar-xml-orfaos": { limite: 10 },
       "projecoes-romaneio": { chaves: [{ sigla: "CAP", numero: "1" }] },
       "projecoes-romaneio-completa": {},
+      "testar-conexao": { integracao: "ssw_bi2" },
     };
     for (const job of JOBS_PEDIVEIS) {
       const definicao = jobs.find((j) => j.nome === job);

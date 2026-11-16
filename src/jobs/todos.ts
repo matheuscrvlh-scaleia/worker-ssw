@@ -2,6 +2,7 @@
 import { type Buscar } from "../fontes/bi2/cliente";
 import { criarJobBi2_0017 } from "../fontes/bi2/job";
 import { type Cofre } from "../fontes/comum/integracao";
+import { criarJobTesteDeConexao } from "../fontes/comum/teste-de-conexao";
 import { type CofreDeToken } from "../fontes/ssw-api/cofre-de-token";
 import { criarJobTokenSsw } from "../fontes/ssw-api/job";
 import { jobWebhookSsw } from "../fontes/webhook/job";
@@ -41,5 +42,6 @@ export function criarJobs(s: ServicosDosJobs): readonly DefinicaoDeJob[] {
     recalcularProjecoesRomaneio,
     reconstruirProjecoesRomaneio,
     importarColetas050,
+    criarJobTesteDeConexao(s),
   ];
 }

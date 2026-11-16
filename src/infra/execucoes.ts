@@ -178,7 +178,12 @@ export function criarExecucoes(deps: DependenciasDasExecucoes): Execucoes {
         if (!atual || atual.name !== job) return null;
         const situacao = await retrato(atual);
         const terminou = situacao.estado === "concluida" || situacao.estado === "falhou";
-        if (terminou || gasto + INTERVALO_DA_ESPERA_MS > aguardarMs) return situacao;
+        // Terminou entre o getJob e o getState: o retrato tem o job de antes (resultado nulo).
+        if (terminou) {
+          const final = await fila.getJob(execucaoId);
+          return final ? retrato(final) : situacao;
+        }
+        if (gasto + INTERVALO_DA_ESPERA_MS > aguardarMs) return situacao;
         await deps.esperar(INTERVALO_DA_ESPERA_MS);
       }
     },

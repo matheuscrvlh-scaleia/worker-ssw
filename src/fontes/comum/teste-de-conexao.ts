@@ -78,7 +78,9 @@ export function criarJobTesteDeConexao(deps: DependenciasDoTeste) {
   return definirJob({
     nome: "testar-conexao",
     fila: "testes",
-    escopo: "empresa",
+    // O resultado vai para `empresa_integracoes`, que só a Plataforma altera (RLS); a leitura é
+    // pela empresa explícita.
+    escopo: "plataforma",
     dados: z.object({ empresaId: z.uuid(), integracao: z.enum(["ssw_web", "ssw_bi2"]) }),
     agendamento: null,
     async processar({ executar, agora, log }, { empresaId, integracao: tipo }) {

@@ -9,7 +9,8 @@ e fica publicada na 3002 do host.
    `http://<host>:3002/interno/v1` com `WORKER_SSW_TOKEN`.
 2. No banco: papel `erp_worker` (sem `BYPASSRLS`) com os GRANTs da lista do README. O worker-ssw
    não cria nada no banco; se faltar coluna ou GRANT ele recusa subir e diz qual.
-3. `cp .env.example .env` e preencher (`chmod 600 .env`). `certs/` com a CA do Supabase.
+3. `cp .env.example .env` e preencher (`chmod 600 .env`). O banco é o `postgres` do compose do
+   ERP, na mesma VPS, pela rede `erp_banco`: o ERP sobe antes (senão `network erp_banco ... not found`).
    `SEGREDOS_CHAVES` são as mesmas do ERP; `INTERNO_TOKENS` contém o `WORKER_SSW_TOKEN` do ERP.
 
 ## 2. Subir e atualizar
@@ -63,7 +64,7 @@ Cada processo abre até `DB_MAX_CONEXOES` (padrão 5). No pior caso o worker-ssw
 | `reconstruir-projecoes` com o serviço no ar | 10 (+1 na origem, se houver) |
 
 Some isso ao que o ERP já usa (API × réplicas + worker do ERP + migrador) e confira contra o
-limite do pooler do Supabase antes de subir `DB_MAX_CONEXOES`.
+`max_connections` do Postgres (100) antes de subir `DB_MAX_CONEXOES`.
 
 ## 6. SSW web por outro IP (provisório)
 

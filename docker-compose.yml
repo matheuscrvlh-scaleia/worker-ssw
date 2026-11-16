@@ -12,9 +12,8 @@ services:
       REDIS_URL: redis://:${REDIS_SENHA:?defina REDIS_SENHA no .env}@redis:6379/0
     ports:
       - "3002:3000"
-    volumes:
-      # CA do Supabase para sslmode=verify-full.
-      - ./certs:/etc/erp/certs:ro
+    # Banco: o postgres do compose do ERP, pela rede erp_banco (sobe o ERP antes).
+    networks: [default, erp_banco]
     depends_on:
       redis: { condition: service_healthy }
     # Chromium do SSW web: init recolhe os processos filhos; /dev/shm maior evita a aba travar.
@@ -47,6 +46,10 @@ services:
       timeout: 3s
       retries: 5
     restart: unless-stopped
+
+networks:
+  erp_banco:
+    external: true
 
 volumes:
   redis_dados:

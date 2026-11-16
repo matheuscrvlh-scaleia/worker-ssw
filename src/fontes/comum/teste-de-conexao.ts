@@ -69,9 +69,21 @@ async function testarSswWeb(
   const senha = segredoDa(deps.cofre, empresaId, "ssw_web", integracao);
   const lida = configuracaoSswWeb(integracao, senha);
   if (!lida.ok) return { ok: false, mensagem: lida.mensagem };
-  const sessao = await deps.ingestao.sswWeb.entrar(lida.config);
-  await sessao.fechar();
-  return { ok: true, mensagem: "Login no SSW web aceito." };
+  try {
+    const sessao = await deps.ingestao.sswWeb.entrar(lida.config);
+    await sessao.fechar();
+    return { ok: true, mensagem: "Login no SSW web aceito." };
+  } catch (erro) {
+    const detalhe = mensagemDe(erro);
+    // Tela de login que não carrega: em geral o SSW recusando o IP do servidor.
+    if (/timeout/i.test(detalhe)) {
+      return {
+        ok: false,
+        mensagem: `O SSW web não abriu a tela de login a tempo (endereço errado, SSW fora do ar ou o IP do servidor bloqueado). Detalhe: ${detalhe}`,
+      };
+    }
+    return { ok: false, mensagem: detalhe };
+  }
 }
 
 export function criarJobTesteDeConexao(deps: DependenciasDoTeste) {
